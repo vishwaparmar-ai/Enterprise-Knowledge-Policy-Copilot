@@ -7,5 +7,6 @@ langchain-community
 langchain-core
 langchain-chroma
 pypdf
+python-docx
 
 psycopg[binary]
