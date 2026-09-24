@@ -13,3 +13,6 @@ wheels/
 
 logs/
 tests/
+
+backend/app/api/temp/
+
