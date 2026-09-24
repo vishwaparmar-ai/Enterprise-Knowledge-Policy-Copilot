@@ -6,6 +6,8 @@ langchain-groq
 langchain-community
 langchain-core
 langchain-chroma
+langchain-huggingface
+sentence-transformers
 pypdf
 python-docx
 
