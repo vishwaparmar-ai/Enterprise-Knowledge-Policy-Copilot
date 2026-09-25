@@ -7,12 +7,11 @@ import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+import pdfplumber
 from docx import Document as DocxDocument
 from docx.opc.exceptions import PackageNotFoundError
 from docx.table import Table
 from docx.text.paragraph import Paragraph
-from pypdf import PdfReader
-from pypdf.errors import PyPdfError
 
 
 class ParseError(Exception):
@@ -74,28 +73,78 @@ def _split_paragraphs(text: str, keep_lines: bool = False) -> list[str]:
 # --------------------------------------------------------------------------- #
 # PDF
 # --------------------------------------------------------------------------- #
+def _table_rows_to_blocks(page, page_no: int) -> tuple[list[Block], list[tuple]]:
+    """
+    Extracts each detected table as one Block per row (kind="table"),
+    mirroring the DOCX table handling below, so a table row stays a
+    single self-contained "Label: Value | Label: Value" unit instead
+    of being flattened into disconnected lines by plain text extraction.
+
+    Returns the table blocks plus the bounding boxes of the tables
+    found on the page, so the caller can exclude those regions from
+    the general prose text extraction (avoids duplicating table
+    content as separate flattened paragraph blocks).
+    """
+    blocks: list[Block] = []
+    bboxes: list[tuple] = []
+
+    tables = page.find_tables()
+
+    for table in tables:
+        bboxes.append(table.bbox)
+        data = table.extract()
+        if not data:
+            continue
+
+        header = [(_clean(c) if c else "") for c in data[0]]
+        has_header = any(header)
+
+        for row in (data[1:] if has_header else data):
+            cells = [(_clean(c) if c else "") for c in row]
+            if not any(cells):
+                continue
+
+            if has_header:
+                pairs = [f"{h}: {c}" for h, c in zip(header, cells) if h and c]
+                row_text = " | ".join(pairs) if pairs else " | ".join(cells)
+            else:
+                row_text = " | ".join(cells)
+
+            blocks.append(Block(text=row_text, kind="table", page=page_no))
+
+    return blocks, bboxes
+
+
 def parse_pdf(path: Path, filename: str) -> ParsedDocument:
     try:
-        reader = PdfReader(str(path))
-        if reader.is_encrypted and not reader.decrypt(""):
-            raise ParseError("PDF is password-protected.")
+        with pdfplumber.open(str(path), password="") as pdf:
+            doc = ParsedDocument(
+                filename=filename, file_type="pdf", page_count=len(pdf.pages)
+            )
+            empty_pages = []
 
-        doc = ParsedDocument(
-            filename=filename, file_type="pdf", page_count=len(reader.pages)
-        )
-        empty_pages = []
+            for page_no, page in enumerate(pdf.pages, start=1):
+                table_blocks, table_bboxes = _table_rows_to_blocks(page, page_no)
+                doc.blocks.extend(table_blocks)
 
-        for page_no, page in enumerate(reader.pages, start=1):
-            text = _clean(page.extract_text() or "")
-            if not text:
-                empty_pages.append(page_no)
-                continue
-            for para in _split_paragraphs(text, keep_lines=True):
-                doc.blocks.append(Block(text=para, page=page_no))
+                # Exclude table regions before extracting the remaining
+                # prose text, so table content isn't also duplicated as
+                # flattened paragraph blocks.
+                text_page = page
+                for bbox in table_bboxes:
+                    text_page = text_page.outside_bbox(bbox)
+
+                text = _clean(text_page.extract_text() or "")
+                if not text and not table_blocks:
+                    empty_pages.append(page_no)
+                    continue
+
+                for para in _split_paragraphs(text, keep_lines=True):
+                    doc.blocks.append(Block(text=para, page=page_no))
 
     except ParseError:
         raise
-    except (PyPdfError, ValueError, OSError) as exc:
+    except Exception as exc:
         raise ParseError(f"Could not read PDF: {exc}") from exc
 
     if empty_pages:

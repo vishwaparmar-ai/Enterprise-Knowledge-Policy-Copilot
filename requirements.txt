@@ -9,6 +9,7 @@ langchain-chroma
 langchain-huggingface
 sentence-transformers
 pypdf
+pdfplumber
 python-docx
 
 psycopg[binary]
@@ -17,3 +18,5 @@ alembic
 pydantic-settings
 
 rank-bm25
+
+openai

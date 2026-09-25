@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 from backend.app.rag.bm25_retriever import BM25Retriever
 from backend.app.rag.chunk_ids import compute_chunk_id
 from backend.app.rag.embedding import get_embeddings
+from backend.app.services.query_rewriter import rewrite_query
 from backend.app.rag.reranker import rerank
 from backend.app.rag.vector_store import get_vector_store
 
@@ -17,7 +18,8 @@ class HybridRetriever:
         bm25_k: int = 10,
         rrf_k: int = 60,
         rerank_candidates: int = 20,
-        use_reranker: bool = True,
+        use_reranker: bool = False,
+        use_query_rewriting: bool = False,
     ):
         self.documents = documents
         self.dense_k = dense_k
@@ -25,11 +27,10 @@ class HybridRetriever:
         self.rrf_k = rrf_k
         self.rerank_candidates = rerank_candidates
         self.use_reranker = use_reranker
+        self.use_query_rewriting = use_query_rewriting
 
-        # BM25 index
         self.bm25 = BM25Retriever(documents)
 
-        # Dense vector store
         embeddings = get_embeddings()
         self.vector_store = get_vector_store(embeddings=embeddings)
 
@@ -38,21 +39,14 @@ class HybridRetriever:
     def _index_documents(self, documents: list[Document]) -> None:
         if not documents:
             return
-
         ids = [compute_chunk_id(document) for document in documents]
         self.vector_store.add_documents(documents, ids=ids)
 
     def dense_retrieve(self, query: str) -> list[Document]:
-        return self.vector_store.similarity_search(
-            query,
-            k=self.dense_k,
-        )
+        return self.vector_store.similarity_search(query, k=self.dense_k)
 
     def bm25_retrieve(self, query: str) -> list[Document]:
-        return self.bm25.retrieve(
-            query=query,
-            k=self.bm25_k,
-        )
+        return self.bm25.retrieve(query=query, k=self.bm25_k)
 
     def reciprocal_rank_fusion(
         self,
@@ -75,37 +69,48 @@ class HybridRetriever:
             scores[document_id] += 1 / (self.rrf_k + rank)
             documents[document_id] = document
 
-        ranked_results = sorted(
-            scores.items(),
-            key=lambda item: item[1],
-            reverse=True,
-        )
+        ranked_results = sorted(scores.items(), key=lambda item: item[1], reverse=True)
 
-        return [
-            (documents[document_id], score)
-            for document_id, score in ranked_results
-        ]
+        return [(documents[document_id], score) for document_id, score in ranked_results]
 
     def retrieve(
         self,
         query: str,
-        top_k: int = 5,
+        top_k: int = 8,
     ) -> list[tuple[Document, float]]:
 
-        dense_results = self.dense_retrieve(query)
-        bm25_results = self.bm25_retrieve(query)
+        queries = rewrite_query(query) if self.use_query_rewriting else [query]
+
+        print("============================")
+        print(f"REWRITTEN QUERIES:\n",queries)
+        print("============================")
+
+
+        all_dense_results: list[Document] = []
+        all_bm25_results: list[Document] = []
+
+        for q in queries:
+            all_dense_results.extend(self.dense_retrieve(q))
+            all_bm25_results.extend(self.bm25_retrieve(q))
 
         fused_results = self.reciprocal_rank_fusion(
-            dense_results=dense_results,
-            bm25_results=bm25_results,
+            dense_results=all_dense_results,
+            bm25_results=all_bm25_results,
         )
 
         if not self.use_reranker:
             return fused_results[:top_k]
 
-        # Take a wider slice of RRF's output as candidates, then let
-        # the cross-encoder re-score and pick the true top_k from
-        # those — RRF's job here is just "get good candidates fast."
         candidates = [document for document, _ in fused_results[: self.rerank_candidates]]
 
+        # Rerank against the ORIGINAL user query, not the rewritten
+        # ones — the cross-encoder should judge relevance to what the
+        # user actually asked, not to an LLM's reformulation of it.
+
+
+        candidates = [document for document, _ in fused_results[: self.rerank_candidates]]
+
+        print("DEBUG candidate pool (pre-rerank):")
+        for c in candidates:
+            print(" -", c.metadata.get("chunk_id"), "|", c.page_content[:90])
         return rerank(query=query, documents=candidates, top_k=top_k)

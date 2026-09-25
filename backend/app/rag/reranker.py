@@ -3,7 +3,7 @@ from __future__ import annotations
 from langchain_core.documents import Document
 from sentence_transformers import CrossEncoder
 
-_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-12-v2"
 
 _model: CrossEncoder | None = None
 
