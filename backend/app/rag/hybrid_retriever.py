@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 from backend.app.rag.bm25_retriever import BM25Retriever
 from backend.app.rag.chunk_ids import compute_chunk_id
 from backend.app.rag.embedding import get_embeddings
+from backend.app.rag.reranker import rerank
 from backend.app.rag.vector_store import get_vector_store
 
 
@@ -15,11 +16,15 @@ class HybridRetriever:
         dense_k: int = 10,
         bm25_k: int = 10,
         rrf_k: int = 60,
+        rerank_candidates: int = 20,
+        use_reranker: bool = True,
     ):
         self.documents = documents
         self.dense_k = dense_k
         self.bm25_k = bm25_k
         self.rrf_k = rrf_k
+        self.rerank_candidates = rerank_candidates
+        self.use_reranker = use_reranker
 
         # BM25 index
         self.bm25 = BM25Retriever(documents)
@@ -28,10 +33,6 @@ class HybridRetriever:
         embeddings = get_embeddings()
         self.vector_store = get_vector_store(embeddings=embeddings)
 
-        # Make sure BM25 and dense search over the SAME chunk set.
-        # compute_chunk_id is shared with vector_store.store_chunks,
-        # so re-ingesting the same file upserts existing vectors
-        # instead of adding duplicates.
         self._index_documents(documents)
 
     def _index_documents(self, documents: list[Document]) -> None:
@@ -62,25 +63,18 @@ class HybridRetriever:
         scores: dict[str, float] = {}
         documents: dict[str, Document] = {}
 
-        # Process dense results
         for rank, document in enumerate(dense_results, start=1):
             document_id = compute_chunk_id(document)
-
             scores[document_id] = scores.get(document_id, 0.0)
             scores[document_id] += 1 / (self.rrf_k + rank)
-
             documents[document_id] = document
 
-        # Process BM25 results
         for rank, document in enumerate(bm25_results, start=1):
             document_id = compute_chunk_id(document)
-
             scores[document_id] = scores.get(document_id, 0.0)
             scores[document_id] += 1 / (self.rrf_k + rank)
-
             documents[document_id] = document
 
-        # Sort by RRF score
         ranked_results = sorted(
             scores.items(),
             key=lambda item: item[1],
@@ -106,4 +100,12 @@ class HybridRetriever:
             bm25_results=bm25_results,
         )
 
-        return fused_results[:top_k]
+        if not self.use_reranker:
+            return fused_results[:top_k]
+
+        # Take a wider slice of RRF's output as candidates, then let
+        # the cross-encoder re-score and pick the true top_k from
+        # those — RRF's job here is just "get good candidates fast."
+        candidates = [document for document, _ in fused_results[: self.rerank_candidates]]
+
+        return rerank(query=query, documents=candidates, top_k=top_k)
