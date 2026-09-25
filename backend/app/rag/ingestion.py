@@ -1,11 +1,13 @@
 """
 Ingestion pipeline:  parse (PDF/DOCX)  ->  clean  ->  extract metadata
 
-    ingested = ingest_document(path, filename, doc_id)
-    ingested.metadata   # DocumentMetadata
-    ingested.blocks     # cleaned Blocks, ready for chunking
+    ingested = ingest_document(path, filename)
+    ingested.doc_id      # stable, content-derived (sha256 of the file)
+    ingested.metadata    # DocumentMetadata
+    ingested.blocks      # cleaned Blocks, ready for chunking
 """
 
+import hashlib
 import logging
 import time
 from collections.abc import Callable
@@ -47,15 +49,38 @@ class IngestedDocument:
         }
 
 
+def _content_doc_id(path: Path) -> str:
+    """
+    Content-addressed document ID: sha256 of the raw file bytes.
+    Re-ingesting the exact same file always produces the same
+    doc_id, so downstream stores can upsert instead of duplicating.
+    """
+    hasher = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(65536), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
+
+
 def ingest_document(
     path: Path,
     filename: str,
-    doc_id: str,
+    doc_id: str | None = None,
     on_stage: Callable[[str], None] | None = None,
 ) -> IngestedDocument:
     """Run all stages. `on_stage` is called with 'parsing' / 'cleaning' / 'metadata'
-    so callers can report progress."""
+    so callers can report progress.
+
+    `doc_id` is optional. If omitted, it's derived deterministically
+    from the file's content (sha256), so calling this twice on the
+    same file yields the same doc_id instead of a new random one
+    every time. Pass an explicit doc_id only if you need to force a
+    specific ID (e.g. reusing an existing DB record's ID).
+    """
     timings: dict[str, int] = {}
+
+    if doc_id is None:
+        doc_id = _content_doc_id(path)
 
     def enter(stage: str) -> float:
         if on_stage:

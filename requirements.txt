@@ -15,3 +15,5 @@ psycopg[binary]
 
 alembic
 pydantic-settings
+
+rank-bm25

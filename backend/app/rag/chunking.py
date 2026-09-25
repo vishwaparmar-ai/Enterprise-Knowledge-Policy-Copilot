@@ -1,27 +1,29 @@
-"""
-Chunking """
+import hashlib
 
-import logging
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-logger = logging.getLogger(__name__)
 
-def chunk_documents(
-        documents:list[Document]
-) -> list[Document]:
-
-    logger.info("Chunking started...")
+def chunk_documents(documents: list[Document]) -> list[Document]:
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=500,
-        separators=["\n\n", "\n", ". ", " ", ""]
+        chunk_size=800,
+        chunk_overlap=100,
+        separators=["\n\n", "\n", ". ", " ", ""],
     )
 
     chunks = splitter.split_documents(documents)
 
-    logger.info("Successfully created chunks")
+    for index, chunk in enumerate(chunks):
+
+        doc_id = chunk.metadata.get("doc_id", "unknown")
+
+        chunk_hash = hashlib.sha256(
+            chunk.page_content.encode("utf-8")
+        ).hexdigest()[:16]
+
+        chunk.metadata["chunk_id"] = (
+            f"{doc_id}:{index}:{chunk_hash}"
+        )
 
     return chunks
