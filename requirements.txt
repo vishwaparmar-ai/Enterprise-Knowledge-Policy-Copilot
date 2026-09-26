@@ -20,3 +20,5 @@ pydantic-settings
 rank-bm25
 
 openai
+
+pyjwt

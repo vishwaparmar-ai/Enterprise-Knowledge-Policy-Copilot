@@ -15,6 +15,7 @@ from pathlib import Path
 
 from docx import Document as DocxDocument
 from pypdf import PdfReader
+from backend.app.core.permissions import infer_access_level
 
 from backend.app.services.document_parser import ParsedDocument
 
@@ -31,6 +32,7 @@ class DocumentMetadata:
     sha256: str
     title: str
     title_source: str  # properties | heading | first_line | filename
+    access_level: int = 0
     author: str | None = None
     subject: str | None = None
     keywords: list[str] = field(default_factory=list)
@@ -157,6 +159,7 @@ def extract_metadata(
         sha256=_sha256(path),
         title=title,
         title_source=title_source,
+        access_level=infer_access_level(filename),   # <-- new
         author=props.get("author"),
         subject=props.get("subject"),
         keywords=props.get("keywords") or [],

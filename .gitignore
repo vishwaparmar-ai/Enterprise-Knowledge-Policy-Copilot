@@ -17,3 +17,5 @@ tests/
 backend/app/api/temp/
 chroma_db/
 
+scripts/
+

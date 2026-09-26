@@ -14,7 +14,7 @@ from backend.app.rag.vector_store import get_vector_store
 class HybridRetriever:
     def __init__(
         self,
-        documents: list[Document],
+        documents: list[Document] | None = None,
         dense_k: int = 10,
         bm25_k: int = 10,
         rrf_k: int = 60,
@@ -22,7 +22,6 @@ class HybridRetriever:
         use_reranker: bool = False,
         use_query_rewriting: bool = False,
     ):
-        self.documents = documents
         self.dense_k = dense_k
         self.bm25_k = bm25_k
         self.rrf_k = rrf_k
@@ -30,18 +29,38 @@ class HybridRetriever:
         self.use_reranker = use_reranker
         self.use_query_rewriting = use_query_rewriting
 
-        self.bm25 = BM25Retriever(documents)
-
         embeddings = get_embeddings()
         self.vector_store = get_vector_store(embeddings=embeddings)
 
-        self._index_documents(documents)
+        if documents is not None:
+            # Ingestion-time construction (your test scripts): embed and
+            # upsert this fresh batch of chunks, then build BM25 from it.
+            self._index_documents(documents)
+            bm25_source = documents
+        else:
+            # Query-only construction (e.g. FastAPI startup): nothing new
+            # to embed — Chroma already has everything from a prior
+            # ingestion run. BM25 has no persistent store of its own, so
+            # its corpus is rebuilt here from whatever Chroma is holding.
+            bm25_source = self._load_all_documents_from_store()
+
+        self.documents = bm25_source
+        self.bm25 = BM25Retriever(bm25_source)
 
     def _index_documents(self, documents: list[Document]) -> None:
         if not documents:
             return
         ids = [compute_chunk_id(document) for document in documents]
         self.vector_store.add_documents(documents, ids=ids)
+
+    def _load_all_documents_from_store(self) -> list[Document]:
+        raw = self.vector_store._collection.get(include=["documents", "metadatas"])
+        texts = raw.get("documents") or []
+        metadatas = raw.get("metadatas") or []
+        return [
+            Document(page_content=text, metadata=metadata or {})
+            for text, metadata in zip(texts, metadatas)
+        ]
 
     def dense_retrieve(
         self,
@@ -87,7 +106,6 @@ class HybridRetriever:
             documents[document_id] = document
 
         ranked_results = sorted(scores.items(), key=lambda item: item[1], reverse=True)
-
         return [(documents[document_id], score) for document_id, score in ranked_results]
 
     def retrieve(
@@ -115,5 +133,4 @@ class HybridRetriever:
             return fused_results[:top_k]
 
         candidates = [document for document, _ in fused_results[: self.rerank_candidates]]
-
         return rerank(query=query, documents=candidates, top_k=top_k)

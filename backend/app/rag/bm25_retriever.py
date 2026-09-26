@@ -9,15 +9,17 @@ _TOKEN_RE = re.compile(r"\w+")
 
 
 class BM25Retriever:
-
     def __init__(self, documents: list[Document]):
         self.documents = documents
+
+        if not documents:
+            self.bm25 = None
+            return
 
         tokenized_documents = [
             self._tokenize(document.page_content)
             for document in documents
         ]
-
         self.bm25 = BM25Okapi(tokenized_documents)
 
     @staticmethod
@@ -30,17 +32,16 @@ class BM25Retriever:
         k: int = 5,
         filter: MetadataFilter | None = None,
     ) -> list[Document]:
+        if self.bm25 is None:
+            return []
 
         tokenized_query = self._tokenize(query)
         scores = self.bm25.get_scores(tokenized_query)
 
-        # Filter first, then rank — otherwise a filtered-out document
-        # occupying a top slot would silently shrink the result count.
         candidate_indices = [
             i for i, document in enumerate(self.documents)
             if matches_filter(document, filter)
         ]
-
         candidate_indices.sort(key=lambda i: scores[i], reverse=True)
 
         return [self.documents[i] for i in candidate_indices[:k]]
