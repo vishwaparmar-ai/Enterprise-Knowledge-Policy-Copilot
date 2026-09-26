@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from dotenv import load_dotenv
+from backend.app.prompts.system_prompts.query_rewriter_prompt_v1 import REWRITE_SYSTEM_PROMPT
 from openai import OpenAI
 
 logger = logging.getLogger(__name__)
@@ -26,20 +27,6 @@ def _get_client() -> OpenAI:
     return _client
 
 
-_REWRITE_SYSTEM_PROMPT = """You rewrite user search queries to improve retrieval \
-from a company policy knowledge base (HR policies, IT policies, etc.).
-
-Given the user's query, produce:
-1. A single cleaned-up, standalone version of the query (fix ambiguity, \
-expand pronouns, keep it a proper question).
-2. 2-3 alternative phrasings that use different but related wording, so a \
-keyword/semantic search has more chances to match the right document \
-(e.g. "leave policy" -> "PTO", "time off", "vacation policy").
-
-Respond ONLY with valid JSON, no markdown, no commentary, in this exact shape:
-{"primary": "<cleaned query>", "variants": ["<alt 1>", "<alt 2>", "<alt 3>"]}
-"""
-
 
 def rewrite_query(query: str, num_variants: int = 3) -> list[str]:
     """
@@ -54,7 +41,7 @@ def rewrite_query(query: str, num_variants: int = 3) -> list[str]:
         response = client.chat.completions.create(
             model=_MODEL_NAME,
             messages=[
-                {"role": "system", "content": _REWRITE_SYSTEM_PROMPT},
+                {"role": "system", "content": REWRITE_SYSTEM_PROMPT},
                 {"role": "user", "content": query},
             ],
             temperature=0.3,

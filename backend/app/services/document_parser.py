@@ -21,9 +21,9 @@ class ParseError(Exception):
 @dataclass
 class Block:
     text: str
-    kind: str = "paragraph"  # paragraph | heading | table
+    kind: str = "paragraph"  # paragraph | heading | table | qa
     page: int | None = None  # PDF only (1-based)
-    heading: str | None = None  # nearest preceding heading (DOCX)
+    heading: str | None = None  # nearest preceding section heading
 
 
 @dataclass
@@ -49,25 +49,55 @@ class ParsedDocument:
 
 
 # --------------------------------------------------------------------------- #
+# Structural patterns — derived from surveying the actual Helix document
+# template across all 27 files in the knowledge base. This template is
+# extremely consistent: every document has the same front-matter block,
+# the same numbered-heading style, the same footer, the same closing line.
+# --------------------------------------------------------------------------- #
+
+# "1. Purpose", "6. Security Requirements for Remote Work" — never ends in
+# terminal punctuation, which is what distinguishes it from a numbered
+# procedure step ("1 Customer submits a request...").
+_SECTION_HEADING = re.compile(r"^\d{1,2}\.\s+[A-Z][A-Za-z0-9 ,/&'()-]{2,80}$")
+
+# "1 Customer submits a request..." — digit + space + capital, NO period.
+_NUMBERED_STEP = re.compile(r"^\d{1,2}\s+[A-Z]")
+
+# FAQ documents only: "Q: How long is parental leave?"
+_QA_QUESTION = re.compile(r"^Q:\s*")
+
+# Recurs on every single page of every document.
+_COMPANY_HEADER = re.compile(r"Internal\s*-\s*Confidential", re.I)
+
+# "HR-002 | Leave and Time Off Policy | v3.1 Page 2 of 2"
+_DOC_FOOTER = re.compile(
+    r"^[A-Z]{2,4}-\d{3}\s*\|.*\|\s*v\d+(\.\d+)?(\s+Page\s+\d+\s+of\s+\d+)?$", re.I
+)
+
+_PAGE_NUM = re.compile(
+    r"^[-–—\s]*(?:page\s+)?\d{1,4}(?:\s*(?:of|/)\s*\d{1,4})?[-–—\s]*$", re.I
+)
+
+# Identical text at the end of every single document in this corpus.
+_END_OF_DOC = re.compile(r"^End of document\.", re.I)
+
+
+def _is_section_heading(text: str) -> bool:
+    if not _SECTION_HEADING.match(text):
+        return False
+    return not text.rstrip().endswith((".", "!", "?"))
+
+
+# --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
 def _clean(text: str) -> str:
     text = text.replace("\x00", "").replace("\u00a0", " ")
+    text = text.replace("(cid:127)", "•")  # PDF bullet glyph -> real bullet char
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)  # re-join hyphenated line breaks
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
-
-
-def _split_paragraphs(text: str, keep_lines: bool = False) -> list[str]:
-    """Split on blank lines. Single newlines inside a paragraph are collapsed,
-    unless keep_lines=True (the cleaner needs them for header/footer removal)."""
-    paras = []
-    for raw in re.split(r"\n\s*\n", text):
-        para = raw.strip() if keep_lines else re.sub(r"\s*\n\s*", " ", raw).strip()
-        if para:
-            paras.append(para)
-    return paras
 
 
 # --------------------------------------------------------------------------- #
@@ -75,15 +105,17 @@ def _split_paragraphs(text: str, keep_lines: bool = False) -> list[str]:
 # --------------------------------------------------------------------------- #
 def _table_rows_to_blocks(page, page_no: int) -> tuple[list[Block], list[tuple]]:
     """
-    Extracts each detected table as one Block per row (kind="table"),
-    mirroring the DOCX table handling below, so a table row stays a
-    single self-contained "Label: Value | Label: Value" unit instead
-    of being flattened into disconnected lines by plain text extraction.
+    Extracts each detected table as one Block per row (kind="table").
 
-    Returns the table blocks plus the bounding boxes of the tables
-    found on the page, so the caller can exclude those regions from
-    the general prose text extraction (avoids duplicating table
-    content as separate flattened paragraph blocks).
+    Handles two table orientations seen in this corpus:
+      - Row-per-record, with a real header (e.g. "Leave Type | Duration | Pay")
+        -> "Leave Type: X | Duration: Y | Pay: Z"
+      - Transposed, attribute-per-row with entity names as column headers
+        and an EMPTY top-left cell (e.g. the pricing table: "" | Starter |
+        Growth | Enterprise, then "Price" | "$199" | "$899" | "Custom").
+        Naively zipping header-to-cell here drops the row's own label
+        ("Price") entirely, since its column header is blank — so it's
+        prepended explicitly instead.
     """
     blocks: list[Block] = []
     bboxes: list[tuple] = []
@@ -107,6 +139,12 @@ def _table_rows_to_blocks(page, page_no: int) -> tuple[list[Block], list[tuple]]
             if has_header:
                 pairs = [f"{h}: {c}" for h, c in zip(header, cells) if h and c]
                 row_text = " | ".join(pairs) if pairs else " | ".join(cells)
+
+                # Transposed-table fix: if the top-left header cell is
+                # blank, the row's own first cell is its real label and
+                # would otherwise be silently dropped.
+                if not header[0] and cells[0]:
+                    row_text = f"{cells[0]}: {row_text}" if row_text else cells[0]
             else:
                 row_text = " | ".join(cells)
 
@@ -123,24 +161,104 @@ def parse_pdf(path: Path, filename: str) -> ParsedDocument:
             )
             empty_pages = []
 
+            current_heading: str | None = None
+            seen_first_heading = False
+            end_of_doc_reached = False
+
+            buffer: list[str] = []
+            buffer_kind: str | None = None
+
+            def flush():
+                nonlocal buffer, buffer_kind
+                if buffer:
+                    text = " ".join(buffer).strip()
+                    if text:
+                        doc.blocks.append(
+                            Block(
+                                text=text,
+                                kind=buffer_kind or "paragraph",
+                                page=page_no,
+                                heading=current_heading,
+                            )
+                        )
+                buffer = []
+                buffer_kind = None
+
             for page_no, page in enumerate(pdf.pages, start=1):
                 table_blocks, table_bboxes = _table_rows_to_blocks(page, page_no)
-                doc.blocks.extend(table_blocks)
 
-                # Exclude table regions before extracting the remaining
-                # prose text, so table content isn't also duplicated as
-                # flattened paragraph blocks.
                 text_page = page
                 for bbox in table_bboxes:
                     text_page = text_page.outside_bbox(bbox)
 
-                text = _clean(text_page.extract_text() or "")
-                if not text and not table_blocks:
+                raw_text = _clean(text_page.extract_text() or "")
+                if not raw_text and not table_blocks:
                     empty_pages.append(page_no)
                     continue
 
-                for para in _split_paragraphs(text, keep_lines=True):
-                    doc.blocks.append(Block(text=para, page=page_no))
+                lines = [ln.strip() for ln in raw_text.split("\n") if ln.strip()]
+                page_had_any_content_block = bool(table_blocks)
+
+                for ln in lines:
+                    if end_of_doc_reached:
+                        continue
+
+                    if _END_OF_DOC.match(ln):
+                        flush()
+                        end_of_doc_reached = True
+                        continue
+
+                    if _COMPANY_HEADER.search(ln) or _DOC_FOOTER.match(ln) or _PAGE_NUM.match(ln):
+                        continue
+
+                    if not seen_first_heading:
+                        if _is_section_heading(ln):
+                            seen_first_heading = True
+                            # fall through to heading handling below
+                        else:
+                            # Front matter: doc-type label, title, "Document
+                            # ID / Owner / Applies to" block — never contains
+                            # retrievable content in this corpus, and it
+                            # duplicates document_metadata.
+                            continue
+
+                    if _is_section_heading(ln):
+                        flush()
+                        current_heading = ln
+                        doc.blocks.append(
+                            Block(text=ln, kind="heading", page=page_no, heading=ln)
+                        )
+                        page_had_any_content_block = True
+                        continue
+
+                    if _QA_QUESTION.match(ln):
+                        flush()
+                        buffer = [ln]
+                        buffer_kind = "qa"
+                        page_had_any_content_block = True
+                        continue
+
+                    if buffer_kind == "qa":
+                        # Continuation of the current Q/A pair (the "A:"
+                        # line itself, or a wrapped continuation of it) —
+                        # keep it atomic until the next Q: or heading.
+                        buffer.append(ln)
+                        continue
+
+                    if _NUMBERED_STEP.match(ln) or ln.startswith("•"):
+                        flush()
+                        buffer = [ln]
+                        buffer_kind = "paragraph"
+                        page_had_any_content_block = True
+                        continue
+
+                    buffer.append(ln)
+                    page_had_any_content_block = True
+
+                flush()
+
+                if not page_had_any_content_block:
+                    empty_pages.append(page_no)
 
     except ParseError:
         raise
@@ -149,8 +267,8 @@ def parse_pdf(path: Path, filename: str) -> ParsedDocument:
 
     if empty_pages:
         doc.warnings.append(
-            f"No extractable text on page(s) {empty_pages[:20]}"
-            f"{'...' if len(empty_pages) > 20 else ''}; they may be scanned images (OCR needed)."
+            f"No extractable content on page(s) {empty_pages[:20]}"
+            f"{'...' if len(empty_pages) > 20 else ''}."
         )
     if not doc.blocks:
         raise ParseError(
@@ -186,7 +304,6 @@ def parse_docx(path: Path, filename: str) -> ParsedDocument:
     doc = ParsedDocument(filename=filename, file_type="docx")
     current_heading: str | None = None
 
-    # Walk the body in document order so tables stay in position
     for child in docx.element.body.iterchildren():
         tag = child.tag.rsplit("}", 1)[-1]
 

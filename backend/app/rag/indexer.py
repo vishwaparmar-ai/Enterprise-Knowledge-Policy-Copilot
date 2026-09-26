@@ -17,8 +17,6 @@ def blocks_to_documents(
     documents = []
 
     base_metadata = document_metadata.to_dict()
-
-    # ChromaDB does not allow empty lists in metadata
     base_metadata = {
         key: value
         for key, value in base_metadata.items()
@@ -37,7 +35,24 @@ def blocks_to_documents(
         if not text.strip():
             continue
 
-        # Remove None and empty-list metadata
+        heading = block_data.get("heading")
+        kind = block_data.get("kind")
+
+        # A standalone heading block ("6. Security Requirements for
+        # Remote Work") is never emitted as its own retrievable chunk —
+        # its text is already folded into every block beneath it via
+        # the prefix below, so keeping it separately just reintroduces
+        # bare, low-information heading chunks competing in results.
+        if kind == "heading":
+            continue
+
+        # Fold the nearest section heading into the content so a chunk
+        # never loses the context that makes it findable by a
+        # heading-shaped query (e.g. "6. Security Requirements for
+        # Remote Work: Use only company-managed devices...").
+        if heading:
+            text = f"{heading}: {text}"
+
         block_data = {
             key: value
             for key, value in block_data.items()
@@ -62,35 +77,30 @@ def blocks_to_documents(
 def index_document(
     path: Path,
     filename: str,
-    doc_id: str,
+    doc_id: str | None = None,
 ):
-    # 1. Parse + clean + metadata
     ingested = ingest_document(
         path=path,
         filename=filename,
         doc_id=doc_id,
     )
 
-    # 2. Convert cleaned blocks → LangChain Documents
     documents = blocks_to_documents(
         blocks=ingested.blocks,
         document_metadata=ingested.metadata,
     )
 
-    # 3. Chunk documents
     chunks = chunk_documents(documents)
 
-    # 4. Load BGE-M3
     embeddings = get_embeddings()
 
-    # 5. Store chunks + embeddings in ChromaDB
     vector_store = store_chunks(
         chunks=chunks,
         embeddings=embeddings,
     )
 
     return {
-        "doc_id": doc_id,
+        "doc_id": ingested.doc_id,
         "documents": len(documents),
         "chunks": len(chunks),
         "vector_store": vector_store,
