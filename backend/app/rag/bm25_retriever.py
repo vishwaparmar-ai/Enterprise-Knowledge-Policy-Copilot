@@ -3,6 +3,8 @@ import re
 from langchain_core.documents import Document
 from rank_bm25 import BM25Okapi
 
+from backend.app.rag.metadata_filter import MetadataFilter, matches_filter
+
 _TOKEN_RE = re.compile(r"\w+")
 
 
@@ -20,22 +22,25 @@ class BM25Retriever:
 
     @staticmethod
     def _tokenize(text: str) -> list[str]:
-        # Word-boundary tokenization instead of a naive split, so
-        # "policy." / "policy," / "policy" all match the same token.
         return _TOKEN_RE.findall(text.lower())
 
     def retrieve(
         self,
         query: str,
         k: int = 5,
+        filter: MetadataFilter | None = None,
     ) -> list[Document]:
 
         tokenized_query = self._tokenize(query)
+        scores = self.bm25.get_scores(tokenized_query)
 
-        results = self.bm25.get_top_n(
-            tokenized_query,
-            self.documents,
-            n=k,
-        )
+        # Filter first, then rank — otherwise a filtered-out document
+        # occupying a top slot would silently shrink the result count.
+        candidate_indices = [
+            i for i, document in enumerate(self.documents)
+            if matches_filter(document, filter)
+        ]
 
-        return results
+        candidate_indices.sort(key=lambda i: scores[i], reverse=True)
+
+        return [self.documents[i] for i in candidate_indices[:k]]
