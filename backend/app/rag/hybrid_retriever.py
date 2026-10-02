@@ -53,6 +53,10 @@ class HybridRetriever:
         ids = [compute_chunk_id(document) for document in documents]
         self.vector_store.add_documents(documents, ids=ids)
 
+    def refresh_bm25(self) -> None:
+        self.documents = self._load_all_documents_from_store()
+        self.bm25 = BM25Retriever(self.documents)
+
     def _load_all_documents_from_store(self) -> list[Document]:
         raw = self.vector_store._collection.get(include=["documents", "metadatas"])
         texts = raw.get("documents") or []

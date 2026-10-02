@@ -1,0 +1,1099 @@
+[
+  {
+    "id": "factual_001",
+    "category": "factual",
+    "question": "How many employees does Helix have as of 2026?",
+    "expected_sources": [
+      "HR-001"
+    ],
+    "reference_answer": "Approximately 480 employees.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_002",
+    "category": "factual",
+    "question": "What is the notice period for employees in India?",
+    "expected_sources": [
+      "HR-001"
+    ],
+    "reference_answer": "60 days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_003",
+    "category": "factual",
+    "question": "How many paid sick days do employees get per year?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "10 paid sick days per calendar year, which do not carry over.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_004",
+    "category": "factual",
+    "question": "How long is secondary caregiver parental leave?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "8 weeks at 100% of base salary.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_005",
+    "category": "factual",
+    "question": "How many company holidays does Helix observe?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "10 company holidays per year, plus 2 floating holidays.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_007",
+    "category": "factual",
+    "question": "What is the maximum gift value employees can accept without VP approval?",
+    "expected_sources": [
+      "HR-003"
+    ],
+    "reference_answer": "USD 100 per person per occasion.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_008",
+    "category": "factual",
+    "question": "How quickly does the People Team acknowledge a reported conduct violation?",
+    "expected_sources": [
+      "HR-003"
+    ],
+    "reference_answer": "Within 2 business days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_009",
+    "category": "factual",
+    "question": "Which days are hybrid employees expected in the office?",
+    "expected_sources": [
+      "HR-004"
+    ],
+    "reference_answer": "Tuesday, Wednesday and Thursday.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_010",
+    "category": "factual",
+    "question": "What is the one-time home office stipend amount?",
+    "expected_sources": [
+      "HR-004"
+    ],
+    "reference_answer": "USD 600 (or local equivalent), claimable within the first 90 days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_011",
+    "category": "factual",
+    "question": "How many days per year can an employee work from a different country?",
+    "expected_sources": [
+      "HR-004"
+    ],
+    "reference_answer": "Up to 20 days per calendar year, with manager and People Team approval at least 30 days in advance.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_012",
+    "category": "factual",
+    "question": "What is the 401(k) company match?",
+    "expected_sources": [
+      "HR-005"
+    ],
+    "reference_answer": "4% company match, vested immediately.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_013",
+    "category": "factual",
+    "question": "Who approves an expense of USD 30,000?",
+    "expected_sources": [
+      "HR-005"
+    ],
+    "reference_answer": "A Vice President (expenses from USD 10,001 to USD 50,000 require VP approval).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_015",
+    "category": "factual",
+    "question": "When are formal performance reviews held?",
+    "expected_sources": [
+      "HR-006"
+    ],
+    "reference_answer": "Twice a year: a mid-year review in June and an annual review in December.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_016",
+    "category": "factual",
+    "question": "How long does a Performance Improvement Plan (PIP) last?",
+    "expected_sources": [
+      "HR-006"
+    ],
+    "reference_answer": "60 days, with weekly check-ins.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_017",
+    "category": "factual",
+    "question": "How many pull request approvals are required to merge to main?",
+    "expected_sources": [
+      "ENG-001"
+    ],
+    "reference_answer": "Two approvals, one of which must be from a CODEOWNER (documentation-only changes need one).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_018",
+    "category": "factual",
+    "question": "What is the recommended maximum size for a pull request?",
+    "expected_sources": [
+      "ENG-001"
+    ],
+    "reference_answer": "Under 400 changed lines; larger changes need a linked design note.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_019",
+    "category": "factual",
+    "question": "What triggers an automatic rollback during a production deployment?",
+    "expected_sources": [
+      "ENG-002"
+    ],
+    "reference_answer": "If the 5xx error rate exceeds 1% or p99 latency rises more than 30% compared to baseline.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_020",
+    "category": "factual",
+    "question": "When is the annual holiday code freeze?",
+    "expected_sources": [
+      "ENG-002"
+    ],
+    "reference_answer": "December 20 to January 2.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_021",
+    "category": "factual",
+    "question": "How quickly must a SEV1 incident be acknowledged?",
+    "expected_sources": [
+      "ENG-003"
+    ],
+    "reference_answer": "Within 5 minutes, 24/7.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_022",
+    "category": "factual",
+    "question": "How much is on-call compensation per week?",
+    "expected_sources": [
+      "ENG-003"
+    ],
+    "reference_answer": "USD 600 per on-call week (local equivalent), plus 1 day of comp time for each SEV1 handled between 22:00 and 06:00.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_024",
+    "category": "factual",
+    "question": "What are Helix's disaster recovery targets (RPO/RTO)?",
+    "expected_sources": [
+      "ENG-004"
+    ],
+    "reference_answer": "RPO of 15 minutes and RTO of 4 hours.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_025",
+    "category": "factual",
+    "question": "What is Helix's secondary AWS region?",
+    "expected_sources": [
+      "ENG-004"
+    ],
+    "reference_answer": "eu-west-1 (Ireland).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_026",
+    "category": "factual",
+    "question": "What is the public API rate limit?",
+    "expected_sources": [
+      "ENG-005"
+    ],
+    "reference_answer": "1,000 requests per minute per API key.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_028",
+    "category": "factual",
+    "question": "What line coverage is required for new code?",
+    "expected_sources": [
+      "ENG-006"
+    ],
+    "reference_answer": "At least 80% line coverage on new code; overall service coverage must stay above 75%.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_029",
+    "category": "factual",
+    "question": "What is the fix target for a P0 bug?",
+    "expected_sources": [
+      "ENG-006"
+    ],
+    "reference_answer": "Within 24 hours.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_030",
+    "category": "factual",
+    "question": "What is the remediation deadline for a Critical severity vulnerability?",
+    "expected_sources": [
+      "SEC-001"
+    ],
+    "reference_answer": "7 days (mitigation within 48 hours if actively exploited).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_031",
+    "category": "factual",
+    "question": "How often is the third-party penetration test performed?",
+    "expected_sources": [
+      "SEC-001"
+    ],
+    "reference_answer": "Annually.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_032",
+    "category": "factual",
+    "question": "What is the minimum password length?",
+    "expected_sources": [
+      "SEC-002"
+    ],
+    "reference_answer": "At least 14 characters, generated and stored in the company password manager (1Password).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_034",
+    "category": "factual",
+    "question": "How quickly is access removed when an employee leaves?",
+    "expected_sources": [
+      "SEC-002"
+    ],
+    "reference_answer": "Within 1 hour of the end of the employee's last working day.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_035",
+    "category": "factual",
+    "question": "How long are system and audit logs retained?",
+    "expected_sources": [
+      "SEC-003"
+    ],
+    "reference_answer": "13 months.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_036",
+    "category": "factual",
+    "question": "What encryption standard is used for data at rest?",
+    "expected_sources": [
+      "SEC-003"
+    ],
+    "reference_answer": "AES-256.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_037",
+    "category": "factual",
+    "question": "Within how many hours must a suspected security incident be reported?",
+    "expected_sources": [
+      "SEC-004"
+    ],
+    "reference_answer": "Within 1 hour of discovery.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_038",
+    "category": "factual",
+    "question": "Within what timeframe must customers be notified of a confirmed data breach?",
+    "expected_sources": [
+      "SEC-004"
+    ],
+    "reference_answer": "Within 72 hours of confirming the breach, in line with GDPR.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_039",
+    "category": "factual",
+    "question": "Can employees use personal laptops to access confidential data?",
+    "expected_sources": [
+      "SEC-005"
+    ],
+    "reference_answer": "No — personal laptops may not be used to access Confidential or Restricted data.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_040",
+    "category": "factual",
+    "question": "Are USB mass-storage devices allowed on company laptops?",
+    "expected_sources": [
+      "SEC-005"
+    ],
+    "reference_answer": "No, they are blocked by default; an exception must be requested from IT.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_042",
+    "category": "factual",
+    "question": "What is the maximum log line size Helix Pulse accepts?",
+    "expected_sources": [
+      "PRD-001"
+    ],
+    "reference_answer": "64 KB.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_043",
+    "category": "factual",
+    "question": "How much does the Growth plan cost per month?",
+    "expected_sources": [
+      "PRD-002"
+    ],
+    "reference_answer": "USD 899 per month.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_045",
+    "category": "factual",
+    "question": "Does the Starter plan include SSO?",
+    "expected_sources": [
+      "PRD-002"
+    ],
+    "reference_answer": "No — SSO (SAML/OIDC) is not included on Starter; it's available on Growth and Enterprise.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_046",
+    "category": "factual",
+    "question": "What was added in the v4.2 release?",
+    "expected_sources": [
+      "PRD-003"
+    ],
+    "reference_answer": "Anomaly detection 2.0 with seasonality awareness (30% fewer false positives), a Kubernetes cost view, and SCIM provisioning for Enterprise.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_047",
+    "category": "factual",
+    "question": "What is the P1 response time for Enterprise customers?",
+    "expected_sources": [
+      "PRD-004"
+    ],
+    "reference_answer": "15 minutes, 24/7.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_048",
+    "category": "factual",
+    "question": "What service credit applies if monthly availability falls below 95%?",
+    "expected_sources": [
+      "PRD-004"
+    ],
+    "reference_answer": "50% of the monthly fee.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_050",
+    "category": "factual",
+    "question": "When must new hires complete security awareness training?",
+    "expected_sources": [
+      "ONB-001"
+    ],
+    "reference_answer": "Within 14 days of starting.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_051",
+    "category": "factual",
+    "question": "When can a new engineer join the on-call rotation?",
+    "expected_sources": [
+      "ONB-001"
+    ],
+    "reference_answer": "After day 90 (having shadowed on-call from day 60).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_052",
+    "category": "factual",
+    "question": "What laptop do engineers receive?",
+    "expected_sources": [
+      "ONB-002"
+    ],
+    "reference_answer": "A 14-inch MacBook Pro with Apple silicon.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_053",
+    "category": "factual",
+    "question": "Is a hardware security key required for engineers?",
+    "expected_sources": [
+      "ONB-002"
+    ],
+    "reference_answer": "Yes, a FIDO2 hardware key is required for engineers and administrators.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_054",
+    "category": "factual",
+    "question": "Who approves a refund of USD 2,000?",
+    "expected_sources": [
+      "SOP-001"
+    ],
+    "reference_answer": "The Head of Customer Success (refunds from USD 501 to USD 5,000).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_055",
+    "category": "factual",
+    "question": "How long does an approved refund take to appear?",
+    "expected_sources": [
+      "SOP-001"
+    ],
+    "reference_answer": "5 to 7 business days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_056",
+    "category": "factual",
+    "question": "How many competitive quotes are required for a purchase above USD 25,000?",
+    "expected_sources": [
+      "SOP-002"
+    ],
+    "reference_answer": "At least 3 competitive quotes, unless a sole-source justification is approved by Finance.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_057",
+    "category": "factual",
+    "question": "After how many days are expenses no longer reimbursable?",
+    "expected_sources": [
+      "SOP-003"
+    ],
+    "reference_answer": "Expenses older than 90 days are not reimbursable (those over 60 days require CFO approval).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_058",
+    "category": "factual",
+    "question": "When is a departing employee's system access revoked?",
+    "expected_sources": [
+      "SOP-004"
+    ],
+    "reference_answer": "Within 1 hour after their last working hour (immediately for involuntary terminations).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_059",
+    "category": "factual",
+    "question": "How often is PostgreSQL backed up?",
+    "expected_sources": [
+      "SOP-005"
+    ],
+    "reference_answer": "Continuous backup with point-in-time recovery, plus a daily snapshot at 03:00 UTC; retained 35 days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_060",
+    "category": "factual",
+    "question": "How long does Helix have to respond to a verified data deletion request?",
+    "expected_sources": [
+      "SOP-006"
+    ],
+    "reference_answer": "Within 30 days (extendable by 60 days for complex requests with notification).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_061",
+    "category": "factual",
+    "question": "What is the learning and development budget per employee per year?",
+    "expected_sources": [
+      "FAQ-001"
+    ],
+    "reference_answer": "USD 1,500 per year per employee for courses, books and conferences, with manager approval.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_062",
+    "category": "factual",
+    "question": "How does Helix equity vest?",
+    "expected_sources": [
+      "FAQ-001"
+    ],
+    "reference_answer": "Over 4 years with a 1-year cliff: 25% vests at the cliff, then the rest vests monthly.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_063",
+    "category": "factual",
+    "question": "How often are access rights reviewed?",
+    "expected_sources": [
+      "FAQ-002"
+    ],
+    "reference_answer": "System owners review access rights quarterly.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_064",
+    "category": "factual",
+    "question": "What security certifications does Helix hold?",
+    "expected_sources": [
+      "FAQ-002"
+    ],
+    "reference_answer": "SOC 2 Type II and ISO 27001.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_065",
+    "category": "factual",
+    "question": "What is the commit message format at Helix?",
+    "expected_sources": [
+      "FAQ-003"
+    ],
+    "reference_answer": "Conventional Commits, for example 'feat: add alert grouping'.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_066",
+    "category": "factual",
+    "question": "When does the on-call handover happen each week?",
+    "expected_sources": [
+      "FAQ-003"
+    ],
+    "reference_answer": "Every Monday at 10:00 UTC, managed in PagerDuty with a primary and a secondary.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_067",
+    "category": "factual",
+    "question": "Is there a free trial of Helix Pulse?",
+    "expected_sources": [
+      "FAQ-004"
+    ],
+    "reference_answer": "Yes, a 14-day trial of Growth features with no credit card required.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "factual_068",
+    "category": "factual",
+    "question": "What discount can a sales director offer without further approval?",
+    "expected_sources": [
+      "FAQ-004"
+    ],
+    "reference_answer": "Up to 20%.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_001",
+    "category": "multi_hop",
+    "question": "If a customer requests a refund of USD 8,000, who approves it, and what SLA governs whether they were even eligible?",
+    "expected_sources": [
+      "SOP-001",
+      "PRD-004"
+    ],
+    "reference_answer": "The CFO approves refunds above USD 5,000 (SOP-001). Eligibility for a refund outside the standard window can depend on whether Helix met its uptime SLA — 99.5%/99.9%/99.99% depending on plan (PRD-004).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_002",
+    "category": "multi_hop",
+    "question": "An employee is terminated involuntarily. When does their access get revoked, and what expense-reporting rule did their conduct potentially violate if they falsified an expense report?",
+    "expected_sources": [
+      "SOP-004",
+      "HR-003"
+    ],
+    "reference_answer": "For involuntary terminations, access is revoked at the moment the conversation begins (SOP-004). Falsifying expense reports is a violation of the Code of Conduct (HR-003), which prohibits dishonesty in business dealings.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_003",
+    "category": "multi_hop",
+    "question": "What security review is required before onboarding a new vendor, and what does the vendor need to provide?",
+    "expected_sources": [
+      "SOP-002",
+      "SEC-001"
+    ],
+    "reference_answer": "Security completes a vendor risk assessment (allow 10 business days, per SOP-002), and third-party vendors are risk-assessed before onboarding per SEC-001. The vendor must provide a SOC 2 report or ISO 27001 certificate, or complete the security questionnaire.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_004",
+    "category": "multi_hop",
+    "question": "How does the deployment freeze policy interact with handling a SEV1 incident that happens during the freeze?",
+    "expected_sources": [
+      "ENG-002",
+      "ENG-003"
+    ],
+    "reference_answer": "The holiday code freeze (Dec 20 - Jan 2) blocks normal production deployments, but approved hotfixes are still allowed (ENG-002). A SEV1 incident would still require immediate response per the incident severity table (ENG-003), and a hotfix outside the deployment window needs approval from the on-call engineering lead and responsible manager.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_005",
+    "category": "multi_hop",
+    "question": "If a laptop is lost, what's the first step, and how does that interact with the device's MDM enrollment?",
+    "expected_sources": [
+      "SEC-005",
+      "ONB-002"
+    ],
+    "reference_answer": "Report a lost device within 1 hour to IT and Security (SEC-005). Since laptops automatically enroll in Jamf MDM (ONB-002), the device can then be locked and wiped remotely.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_006",
+    "category": "multi_hop",
+    "question": "What rating does an employee need to be promoted, and how does that relate to a Performance Improvement Plan?",
+    "expected_sources": [
+      "HR-006"
+    ],
+    "reference_answer": "Promotion requires a rating of 4 or above ('Exceeds Expectations') in the latest review, sustained for at least two consecutive quarters. A PIP is the opposite trajectory — triggered by a rating of 1, or a rating of 2 in two consecutive cycles.",
+    "is_answerable": true,
+    "notes": "Technically single-document, but requires synthesizing two separate sections (Section 4 vs Section 5) — kept as multi-hop for reasoning complexity."
+  },
+  {
+    "id": "multihop_007",
+    "category": "multi_hop",
+    "question": "What data retention period applies to a customer on the Growth plan, and what happens to that data if they submit a deletion request?",
+    "expected_sources": [
+      "PRD-002",
+      "SOP-006"
+    ],
+    "reference_answer": "Growth plan customers have 30 days of data retention (PRD-002). On a verified deletion request, data is removed from production immediately and from backups once they expire after 35 days (SOP-006).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_008",
+    "category": "multi_hop",
+    "question": "How does a new engineer get production access, and how long does a session last once granted?",
+    "expected_sources": [
+      "ONB-002",
+      "SEC-002"
+    ],
+    "reference_answer": "Production access is not part of default onboarding (ONB-002); engineers request just-in-time access through the access portal with manager approval. JIT sessions last a maximum of 4 hours and are fully logged (SEC-002).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_009",
+    "category": "multi_hop",
+    "question": "What's the process if a customer's data is affected by a confirmed security breach, and how does that align with the SOC 2 audit Helix undergoes?",
+    "expected_sources": [
+      "SEC-004",
+      "SEC-001"
+    ],
+    "reference_answer": "Customers must be notified within 72 hours of a confirmed breach involving their personal data (SEC-004). Helix maintains SOC 2 Type II certification with an annual audit in Q3 (SEC-001), which would review incident response controls like this one.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_010",
+    "category": "multi_hop",
+    "question": "If an expense of USD 60,000 needs approval, whose sign-off is required, and does it also need a competitive-quote process?",
+    "expected_sources": [
+      "HR-005",
+      "SOP-002"
+    ],
+    "reference_answer": "Per HR-005's expense approval table, anything above USD 50,000 requires CFO approval. Per SOP-002's vendor procurement thresholds, an annual contract value above USD 50,000 additionally requires budget owner, Finance, Security, Legal and CFO approval, plus at least 3 competitive quotes for purchases above USD 25,000.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_011",
+    "category": "multi_hop",
+    "question": "How does the on-call rotation eligibility timeline align with the mandatory training deadlines for new engineers?",
+    "expected_sources": [
+      "ONB-001",
+      "ENG-003"
+    ],
+    "reference_answer": "New engineers complete secure coding training within 30 days of joining (ONB-001) and shadow on-call from day 60, joining the rotation only after 90 days of employment (ENG-003, echoed in ONB-001's 30-60-90 plan).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_012",
+    "category": "multi_hop",
+    "question": "What data classification applies to customer telemetry, and how long is it retained?",
+    "expected_sources": [
+      "SEC-003",
+      "PRD-001"
+    ],
+    "reference_answer": "Customer telemetry is classified Confidential (SEC-003) and retained per the customer's plan — 7, 30, or up to 13 months (PRD-001/SEC-003), deleted after expiry.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_013",
+    "category": "multi_hop",
+    "question": "If a critical production vulnerability is being actively exploited, what's the remediation deadline, and who leads the response?",
+    "expected_sources": [
+      "SEC-001",
+      "SEC-004"
+    ],
+    "reference_answer": "A Critical (CVSS 9.0-10.0) vulnerability normally has a 7-day remediation deadline, but mitigation is required within 48 hours if actively exploited (SEC-001). An active exploit would also likely be handled as a security incident under SEC-004, with an assigned Incident Lead and legal counsel engaged immediately for S1/S2 severity.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_014",
+    "category": "multi_hop",
+    "question": "What's the total path from a customer reporting a P1 issue to it reaching an on-call SRE?",
+    "expected_sources": [
+      "PRD-004",
+      "ENG-003"
+    ],
+    "reference_answer": "A P1 issue starts with Tier 1 support triage, escalates to Tier 2 after 2 hours without resolution, then to the on-call SRE via PagerDuty for confirmed platform issues (PRD-004), following the on-call and severity process defined in ENG-003.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_015",
+    "category": "multi_hop",
+    "question": "How does the sabbatical policy interact with the annual PTO accrual an employee would otherwise be earning?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "The sabbatical (4 weeks paid, once every 5 years for employees with 5+ years of service) is separate from annual PTO accrual (20-30 days/year based on tenure) — the policy doesn't state PTO stops accruing during a sabbatical, so this may need clarification from the People Team.",
+    "is_answerable": true,
+    "notes": "Deliberately includes an ambiguous/under-specified case — good test of whether the system correctly flags uncertainty rather than inventing an answer."
+  },
+  {
+    "id": "multihop_016",
+    "category": "multi_hop",
+    "question": "If Helix misses its SLA for an Enterprise customer at 94% uptime, what's the service credit, and how does that customer escalate if unhappy?",
+    "expected_sources": [
+      "PRD-004"
+    ],
+    "reference_answer": "At 94% availability (below 95%), the service credit is 50% of the monthly fee. If the customer remains unhappy, escalation follows Tier 1 -> Tier 2 -> on-call SRE -> Head of Customer Success for repeated SLA misses.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_017",
+    "category": "multi_hop",
+    "question": "What happens to a departing employee's email and shared documents, and how does that relate to data retention rules for their HR records?",
+    "expected_sources": [
+      "SOP-004",
+      "SEC-003"
+    ],
+    "reference_answer": "The manager forwards the employee's email to a delegate for 30 days, and shared document ownership is transferred (SOP-004). Separately, the employee's HR records are retained for 7 years after employment ends (SEC-003).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_018",
+    "category": "multi_hop",
+    "question": "How does the canary rollout process relate to the error-budget policy for a service that's already over budget?",
+    "expected_sources": [
+      "ENG-002",
+      "ENG-003"
+    ],
+    "reference_answer": "Canary rollout (10% -> 50% -> 100% traffic) applies to all production releases regardless of error budget (ENG-002). Separately, if a service has exhausted its error budget, feature work pauses in favor of reliability work (ENG-003) — which would likely delay new releases from reaching that canary stage in the first place.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_019",
+    "category": "multi_hop",
+    "question": "A vendor needs access to customer data — what security assessment applies, and what data classification governs how that data must be handled once shared?",
+    "expected_sources": [
+      "SOP-002",
+      "SEC-003"
+    ],
+    "reference_answer": "The vendor undergoes a Security risk assessment before onboarding (SOP-002). Once shared, customer data — likely classified Confidential or Restricted (SEC-003) — must only be shared externally under NDA with appropriate access controls and encryption.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "multihop_020",
+    "category": "multi_hop",
+    "question": "If a new hire is an engineer, what onboarding trainings are mandatory, and when can they eventually access production?",
+    "expected_sources": [
+      "ONB-001",
+      "SEC-002"
+    ],
+    "reference_answer": "Mandatory trainings due within 14-30 days include security awareness, Code of Conduct, data privacy, secure coding (30 days), and benefits enrollment (ONB-001). Production access is never part of default onboarding — it requires just-in-time access requested through the access portal with manager approval, regardless of tenure (SEC-002).",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_001",
+    "category": "exact_term",
+    "question": "What is the maximum number of PTO days that can be carried over to the next year?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "5 days.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_002",
+    "category": "exact_term",
+    "question": "What is the CVSS score range that qualifies as a Critical vulnerability?",
+    "expected_sources": [
+      "SEC-001"
+    ],
+    "reference_answer": "9.0 to 10.0.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_003",
+    "category": "exact_term",
+    "question": "What is the maximum recommended pull request size in changed lines?",
+    "expected_sources": [
+      "ENG-001"
+    ],
+    "reference_answer": "400 changed lines.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_004",
+    "category": "exact_term",
+    "question": "By what percentage must p99 latency rise to trigger an automatic rollback?",
+    "expected_sources": [
+      "ENG-002"
+    ],
+    "reference_answer": "More than 30% compared to baseline.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_005",
+    "category": "exact_term",
+    "question": "What is the exact home office stipend amount in USD?",
+    "expected_sources": [
+      "HR-004"
+    ],
+    "reference_answer": "USD 600.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_006",
+    "category": "exact_term",
+    "question": "What is the minimum required password length in characters?",
+    "expected_sources": [
+      "SEC-002"
+    ],
+    "reference_answer": "14 characters.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_007",
+    "category": "exact_term",
+    "question": "Within how many minutes must a SEV1 incident be acknowledged?",
+    "expected_sources": [
+      "ENG-003"
+    ],
+    "reference_answer": "5 minutes.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_008",
+    "category": "exact_term",
+    "question": "What is the maximum duration of a just-in-time production access session, in hours?",
+    "expected_sources": [
+      "SEC-002"
+    ],
+    "reference_answer": "4 hours.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_009",
+    "category": "exact_term",
+    "question": "How many weeks is the paid sabbatical?",
+    "expected_sources": [
+      "HR-002"
+    ],
+    "reference_answer": "4 weeks.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "exact_010",
+    "category": "exact_term",
+    "question": "What is the maximum log line size Helix Pulse accepts, in KB?",
+    "expected_sources": [
+      "PRD-001"
+    ],
+    "reference_answer": "64 KB.",
+    "is_answerable": true,
+    "notes": ""
+  },
+  {
+    "id": "unanswerable_001",
+    "category": "unanswerable",
+    "question": "Does Helix have an office in Singapore?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "Corpus only mentions Austin, Bengaluru, and London (HR-001)."
+  },
+  {
+    "id": "unanswerable_002",
+    "category": "unanswerable",
+    "question": "What is Helix's stock ticker symbol?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "Helix is not described as a public company anywhere in the corpus."
+  },
+  {
+    "id": "unanswerable_003",
+    "category": "unanswerable",
+    "question": "What is the maternity leave policy for employees based in Germany?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "HR-002/HR-001 only cover US, India, and UK employment."
+  },
+  {
+    "id": "unanswerable_004",
+    "category": "unanswerable",
+    "question": "Can employees bring pets to the office?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "Not mentioned anywhere in the corpus."
+  },
+  {
+    "id": "unanswerable_005",
+    "category": "unanswerable",
+    "question": "What is the guest Wi-Fi password for the office?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "Not the kind of detail this corpus would contain, and not present."
+  },
+  {
+    "id": "unanswerable_006",
+    "category": "unanswerable",
+    "question": "Does Helix Pulse support on-premise (self-hosted) deployment?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "PRD-001 only describes a cloud SaaS platform; on-prem is never mentioned."
+  },
+  {
+    "id": "unanswerable_007",
+    "category": "unanswerable",
+    "question": "Who is Helix's Chief Executive Officer?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "No CEO or executive leadership names appear anywhere in the corpus."
+  },
+  {
+    "id": "unanswerable_008",
+    "category": "unanswerable",
+    "question": "What is the process for requesting a company credit limit increase for personal use?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "SOP-003/HR-005 cover business expense reimbursement, not personal credit limits."
+  },
+  {
+    "id": "unanswerable_009",
+    "category": "unanswerable",
+    "question": "Does Helix offer a four-day work week option?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "HR-004 defines hybrid/remote/in-office arrangements, but no four-day-week option."
+  },
+  {
+    "id": "unanswerable_010",
+    "category": "unanswerable",
+    "question": "What is Helix's parking reimbursement policy for employees driving to the office?",
+    "expected_sources": [],
+    "reference_answer": null,
+    "is_answerable": false,
+    "notes": "Not covered — HR-005 covers travel expenses for business trips, not commuting."
+  }
+]

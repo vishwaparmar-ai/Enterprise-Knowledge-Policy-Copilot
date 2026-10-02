@@ -22,3 +22,8 @@ rank-bm25
 openai
 
 pyjwt
+
+# evals
+ragas
+datasets
+langchain-openai

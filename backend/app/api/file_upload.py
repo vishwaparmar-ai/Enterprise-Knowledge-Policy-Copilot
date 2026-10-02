@@ -167,8 +167,9 @@ def process_document(
         # server. Dense/Chroma search sees new documents immediately
         # since it queries the live store directly; BM25 does not.
         try:
-            from backend.app.api.chat import hybrid_retriever
-            hybrid_retriever.refresh_bm25()
+            from backend.app.api.chat import get_hybrid_retriever
+            
+            get_hybrid_retriever().refresh_bm25()
         except Exception:
             logger.exception(
                 "Failed to refresh BM25 index after ingesting %s — "

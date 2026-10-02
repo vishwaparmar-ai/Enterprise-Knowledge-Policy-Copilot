@@ -26,6 +26,7 @@ _JUNK_TITLE = re.compile(r"^(untitled|document\d*|microsoft word\b.*|.*\.(docx?|
 @dataclass
 class DocumentMetadata:
     doc_id: str
+    source_id:str
     source_filename: str
     file_type: str
     size_bytes: int
@@ -69,6 +70,17 @@ def _iso(dt: datetime | None) -> str | None:
 def _str(value) -> str | None:
     value = (str(value).strip() if value is not None else "")
     return value or None
+
+def _extract_source_id(title: str) -> str:
+    """
+    Extract a stable source ID such as HR-004 from the document title.
+    """
+    match = re.match(r"^(HR-\d+)\b", title.strip(), re.IGNORECASE)
+
+    if not match:
+        return ""
+
+    return match.group(1).upper()
 
 
 def _keywords(raw: str | None) -> list[str]:
@@ -149,10 +161,16 @@ def extract_metadata(
     props = _pdf_properties(path) if doc.file_type == "pdf" else _docx_properties(path)
     title, title_source = _resolve_title(props.get("title"), doc, filename)
 
+    source_id = _extract_source_id(title)
+
+    print("========SOURCE ID:=======\n")
+    print(source_id)
+
     word_count = sum(len(b.text.split()) for b in doc.blocks)
 
     return DocumentMetadata(
         doc_id=doc_id,
+        source_id=source_id,
         source_filename=filename,
         file_type=doc.file_type,
         size_bytes=path.stat().st_size,

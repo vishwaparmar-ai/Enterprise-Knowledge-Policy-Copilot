@@ -28,29 +28,41 @@ def _get_client() -> OpenAI:
 
 
 
-def rewrite_query(query: str, num_variants: int = 3) -> list[str]:
-    """
-    Returns a list of queries to run through retrieval: the cleaned-up
-    primary query first, followed by up to `num_variants` alternative
-    phrasings. Falls back to just the original query if the LLM call
-    fails, so retrieval never breaks because of the rewriter.
-    """
+_REWRITE_SYSTEM_PROMPT = """You rewrite a search query for a company policy knowledge base.
+
+Return ONLY this JSON object, nothing else, no markdown fences:
+{"primary": "<cleaned up query>", "variants": ["<alt 1>", "<alt 2>"]}
+
+Keep "primary" close to the original question, just clearer. Keep each
+variant SHORT (under 15 words) and using different wording for the same
+need. Exactly 2 variants, no more."""
+
+
+def rewrite_query(query: str, num_variants: int = 2) -> list[str]:
     try:
         client = _get_client()
 
         response = client.chat.completions.create(
             model=_MODEL_NAME,
             messages=[
-                {"role": "system", "content": REWRITE_SYSTEM_PROMPT},
+                {"role": "system", "content": _REWRITE_SYSTEM_PROMPT},
                 {"role": "user", "content": query},
             ],
-            temperature=0.3,
-            max_tokens=600,
-            response_format={"type": "json_object"},  # Groq supports this; forces valid JSON, no markdown fences
-
+            temperature=0.2,
+            max_tokens=1024,
+            response_format={"type": "json_object"},
         )
 
         raw_content = response.choices[0].message.content.strip()
+
+        # Defensive parsing: strip accidental markdown fences before
+        # attempting json.loads, in case the model wraps its output
+        # despite being told not to.
+        if raw_content.startswith("```"):
+            raw_content = raw_content.strip("`")
+            if raw_content.lower().startswith("json"):
+                raw_content = raw_content[4:].strip()
+
         parsed = json.loads(raw_content)
 
         primary = parsed.get("primary", "").strip() or query
@@ -58,7 +70,6 @@ def rewrite_query(query: str, num_variants: int = 3) -> list[str]:
 
         queries = [primary] + variants[:num_variants]
 
-        # Dedupe while preserving order, in case the LLM repeats itself
         seen: set[str] = set()
         unique_queries: list[str] = []
         for q in queries:
