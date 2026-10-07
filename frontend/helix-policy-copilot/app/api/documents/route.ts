@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { backendFetch, unauthorized } from "@/lib/backend";
+import { backendDetail, normStatus } from "@/lib/documents";
 import { getSession } from "@/lib/session";
 
 // Backend contract:
@@ -8,32 +9,14 @@ import { getSession } from "@/lib/session";
 const UPLOAD_PATH = "/upload/";
 const LIST_PATH = "/upload/documents";
 
-export type DocStatus = "indexed" | "processing" | "failed";
-
-/** DB statuses: queued, processing, ingested, indexed, failed. "ingested" still means indexing is running. */
-export function normStatus(s: unknown): DocStatus {
-  const v = String(s ?? "").toLowerCase();
-  if (v === "indexed") return "indexed";
-  if (v === "failed") return "failed";
-  return "processing";
-}
-
-/** Surface the backend's own `detail` message (e.g. "Only .pdf and .docx files are allowed."). */
-export async function backendDetail(res: Response): Promise<string> {
-  try {
-    const body = await res.json();
-    return typeof body?.detail === "string" ? body.detail : "";
-  } catch {
-    return "";
-  }
-}
-
 // The real permission check lives in your backend (require_role); this is a UI-layer guard.
 export async function GET() {
   if (!(await getSession()).isAdmin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   try {
     const res = await backendFetch(LIST_PATH);
     if (res.status === 401) return unauthorized();
+    // The list endpoint may not exist yet on the backend; tell the UI instead of showing a generic error.
+    if (res.status === 404 || res.status === 405) return NextResponse.json({ documents: [], listMissing: true });
     if (!res.ok) return NextResponse.json({ error: "failed" }, { status: res.status === 403 ? 403 : 502 });
     const data = await res.json();
     const list = Array.isArray(data) ? data : data.documents ?? [];

@@ -25,6 +25,7 @@ from fastapi import (
     HTTPException,
     UploadFile,
     status,
+    Response
 )
 from sqlalchemy.orm import Session
 
@@ -36,7 +37,7 @@ from backend.app.db.session import SessionLocal
 from backend.app.rag.indexer import blocks_to_documents
 from backend.app.rag.chunking import chunk_documents
 from backend.app.rag.embedding import get_embeddings
-from backend.app.rag.vector_store import store_chunks
+from backend.app.rag.vector_store import store_chunks, delete_document_chunks
 
 from backend.app.core.security import require_role
 from backend.app.models.user import Role, User
@@ -364,14 +365,58 @@ async def upload_file(
 
 
 # --------------------------------------------------------------------------- #
+# List documents (admin only)
+# --------------------------------------------------------------------------- #
+
+@router.get("/documents")
+def list_documents(
+    limit: int = 200,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ADMIN)),
+):
+    # Newest first. Falls back to ingested_at if your model has no created_at column.
+    order_col = getattr(Document, "created_at", None) or Document.ingested_at
+
+    docs = (
+        db.query(Document)
+        .order_by(order_col.desc())
+        .offset(offset)
+        .limit(min(limit, 500))
+        .all()
+    )
+
+    return [
+        {
+            "doc_id": str(d.id),
+            "original_filename": d.original_filename,
+            "title": d.title,
+            "file_type": d.file_type,
+            "size_bytes": d.size_bytes,
+            "status": d.status.value,
+            "stage": d.stage,
+            "error": d.error,
+            "page_count": d.page_count,
+            "word_count": d.word_count,
+            "ingested_at": d.ingested_at,
+            "created_at": getattr(d, "created_at", None),
+        }
+        for d in docs
+    ]
+
+
+# --------------------------------------------------------------------------- #
 # Get document
 # --------------------------------------------------------------------------- #
+
+
 
 @router.get("/documents/{doc_id}")
 def get_document(
     doc_id: uuid.UUID,
     include_content: bool = False,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ADMIN)),
 ):
 
     document = db.get(Document, doc_id)
@@ -417,3 +462,98 @@ def get_document(
             )
 
     return response
+
+
+# --------------------------------------------------------------------------- #
+# Delete document (admin only)
+# --------------------------------------------------------------------------- #
+
+@router.delete(
+    "/documents/{doc_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_document(
+    doc_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ADMIN)),
+):
+    document = db.get(Document, doc_id)
+
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found.",
+        )
+
+    # The background task still uses this row and its files while the
+    # document is queued, parsing, or indexing, so don't delete mid-flight.
+    if document.status in {
+        DocumentStatus.QUEUED,
+        DocumentStatus.PROCESSING,
+        DocumentStatus.INGESTED,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This document is still being processed. Try again once it finishes.",
+        )
+
+    # -------------------------------------------------
+    # 1. Remove chunks from the vector store.
+    #    Done first: if it fails we keep the DB row, so the admin can retry.
+    #    Chunks are matched by filename, so skip this if another upload with
+    #    the same filename still exists (it shares those chunks).
+    # -------------------------------------------------
+    same_name_count = (
+        db.query(Document)
+        .filter(
+            Document.original_filename == document.original_filename,
+            Document.id != document.id,
+        )
+        .count()
+    )
+
+    removed_chunks = 0
+    if same_name_count == 0:
+        try:
+            removed_chunks = delete_document_chunks(document.original_filename)
+        except Exception as exc:
+            logger.exception("Failed to remove vectors for document %s", doc_id)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Could not remove the document from the search index: {exc}",
+            )
+
+    # -------------------------------------------------
+    # 2. Remove files from disk (best effort).
+    # -------------------------------------------------
+    if document.storage_path:
+        Path(document.storage_path).unlink(missing_ok=True)
+    (INGESTED_DIR / f"{doc_id}.json").unlink(missing_ok=True)
+
+    # -------------------------------------------------
+    # 3. Remove the database record.
+    # -------------------------------------------------
+    db.delete(document)
+    db.commit()
+
+    # -------------------------------------------------
+    # 4. Rebuild the keyword (BM25) index so deleted text stops matching.
+    # -------------------------------------------------
+    try:
+        from backend.app.api.chat import get_hybrid_retriever
+
+        get_hybrid_retriever().refresh_bm25()
+    except Exception:
+        logger.exception(
+            "Failed to refresh BM25 index after deleting %s; restart the server to clear it from keyword search.",
+            doc_id,
+        )
+
+    logger.info(
+        "Document %s deleted by %s (%d chunks removed)",
+        doc_id,
+        current_user.email,
+        removed_chunks,
+    )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
