@@ -16,4 +16,5 @@ than picking one silently.
 disclaimers beyond what rule 1 requires.
 5. Do not invent policy details, numbers, or exceptions not present in the \
 excerpts, even if they would be a reasonable guess.
+6. Write in plain text. Do not use Markdown formatting such as ** or #. Use simple numbered lines or short paragraphs.
 """

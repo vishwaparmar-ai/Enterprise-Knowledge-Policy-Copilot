@@ -3,6 +3,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LogoMark } from "@/components/ui";
 import { AppIcon } from "./Icons";
+import Markdown from "./Markdown";
 
 type Source = { document: string; page: number | null; snippet: string };
 type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: Source[]; retry?: string };
@@ -134,7 +135,7 @@ export default function ChatPanel() {
                   <li key={m.id} className="flex gap-3">
                     <span className="mt-0.5 shrink-0"><LogoMark size={28} /></span>
                     <div className="min-w-0 max-w-[88%] rounded-2xl rounded-tl-md border border-line bg-white px-4 py-3 shadow-btn">
-                      <p className="whitespace-pre-wrap text-[14.5px] leading-relaxed">{m.text}</p>
+                      <Markdown text={m.text} />
                       {m.sources && <SourceChips sources={m.sources} />}
                       {m.retry && (
                         <button onClick={() => send(m.retry!)} className="mt-2 text-[13px] font-medium text-brand hover:underline">Try again</button>

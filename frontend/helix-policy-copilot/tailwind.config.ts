@@ -14,7 +14,8 @@ const config: Config = {
         success: "#16A34A",
         danger: "#DC2626",
       },
-      fontFamily: { sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"] },
+      // The fallback inside var() keeps a sans-serif font even if the Inter variable is missing.
+      fontFamily: { sans: ["var(--font-inter, Inter)", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Arial", "sans-serif"] },
       boxShadow: {
         card: "0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -6px rgb(15 23 42 / 0.08)",
         btn: "0 1px 2px rgb(15 23 42 / 0.12)",
