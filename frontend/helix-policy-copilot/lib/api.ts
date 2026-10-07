@@ -45,19 +45,16 @@ async function parseResponse<T>(
 
 export async function login(
   payload: LoginRequest
-): Promise<TokenResponse> {
-  const response = await fetch(
-    `${API_URL}/auth/login`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+): Promise<{ role: Role }> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 
-  return parseResponse<TokenResponse>(response);
+  return parseResponse<{ role: Role }>(response);
 }
 
 export async function register(
