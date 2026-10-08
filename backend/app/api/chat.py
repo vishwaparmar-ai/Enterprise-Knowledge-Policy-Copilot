@@ -1,10 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
 from backend.app.core.permissions import allowed_access_levels
 from backend.app.core.security import get_current_user
+from backend.app.db.session import get_db
 from backend.app.models.user import User
 from backend.app.schemas.chat import ChatResponse, ChatRequest, Citation
 from backend.app.rag.hybrid_retriever import HybridRetriever
 from backend.app.rag.generation import generate_answer
+from backend.app.rag.smalltalk import small_talk_reply
+from backend.app.services.chat_history import (
+    build_generation_question,
+    build_retrieval_query,
+    get_or_create_conversation,
+    recent_history,
+    save_exchange,
+)
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -21,14 +32,26 @@ def get_hybrid_retriever() -> HybridRetriever:
 @router.post("/", response_model=ChatResponse)
 def chat(
     request: ChatRequest,
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Load (or start) the conversation. A conversation that belongs to another user is a 404.
+    conversation, is_new = get_or_create_conversation(db, current_user, request.conversation_id, request.query)
+    history = [] if is_new else recent_history(db, conversation.id)
+
     try:
+        # Conversational messages ("thanks", "hi") skip retrieval entirely.
+        reply = small_talk_reply(request.query)
+        if reply is not None:
+            save_exchange(db, conversation, request.query, reply, [])
+            return ChatResponse(answer=reply, citations=[], conversation_id=str(conversation.id))
+
         retriever = get_hybrid_retriever()
         levels = allowed_access_levels(current_user.role)
 
+        # Follow-ups like "what about contractors?" are searched together with the previous question.
         results = retriever.retrieve(
-            query=request.query,
+            query=build_retrieval_query(history, request.query),
             top_k=8,
             filter={"access_level": levels},
         )
@@ -36,7 +59,7 @@ def chat(
         # Defense-in-depth: even though the filter above is the real
         # authorization boundary, explicitly re-check every retrieved
         # chunk's access_level before it reaches generate_answer. This
-        # should never trigger if the filter is correct — it exists so
+        # should never trigger if the filter is correct; it exists so
         # a future bug in the filter/store layer fails closed (drops
         # the chunk) rather than silently leaking restricted content
         # into the LLM prompt.
@@ -47,7 +70,11 @@ def chat(
                 continue
             safe_results.append((document, score))
 
-        response = generate_answer(query=request.query, results=safe_results)
+        # The model also sees the recent turns, so "it" / "that" resolve correctly.
+        response = generate_answer(
+            query=build_generation_question(history, request.query),
+            results=safe_results,
+        )
 
         seen = set()
         citations = []
@@ -60,7 +87,16 @@ def chat(
             seen.add(key)
             citations.append(Citation(source=source, page=page))
 
-        return ChatResponse(answer=response["answer"], citations=citations)
+        save_exchange(
+            db,
+            conversation,
+            request.query,
+            response["answer"],
+            [{"source": c.source, "page": c.page} for c in citations],
+        )
+
+        return ChatResponse(answer=response["answer"], citations=citations, conversation_id=str(conversation.id))
 
     except Exception as exc:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Chat generation failed: {str(exc)}")

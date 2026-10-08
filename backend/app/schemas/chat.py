@@ -1,4 +1,5 @@
 from pydantic import BaseModel,Field
+import uuid
 
 class ChatRequest(BaseModel):
     query: str = Field(
@@ -6,6 +7,7 @@ class ChatRequest(BaseModel):
         min_length=1,
         max_length=1000,
     )
+    conversation_id: uuid.UUID | None = None   
 
 
 class Citation(BaseModel):
@@ -16,3 +18,4 @@ class Citation(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     citations: list[Citation]
+    conversation_id: uuid.UUID | None = None   

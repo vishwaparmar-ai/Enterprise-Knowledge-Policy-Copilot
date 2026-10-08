@@ -6,6 +6,7 @@ from backend.app.core.logging import setup_logging
 from backend.app.api.file_upload import router as upload_router
 from backend.app.api.chat import router as chat_router
 from backend.app.api.auth import router as login_router
+from backend.app.api.conversations import router as conversation_router
 from fastapi.middleware.cors import CORSMiddleware
 
 setup_logging()
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(upload_router)
 app.include_router(chat_router)
 app.include_router(login_router)
+app.include_router(conversation_router)
 
 @app.get("/health")
 async def health_check():
