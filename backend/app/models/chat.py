@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 try:
@@ -49,3 +49,22 @@ class Message(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=_now)
 
     conversation = relationship("Conversation", back_populates="messages")
+    feedback = relationship("Feedback", back_populates="message", cascade="all, delete-orphan")
+
+
+class Feedback(Base):
+    """A user's thumbs up/down on one assistant answer. One row per (message, user)."""
+
+    __tablename__ = "message_feedback"
+    __table_args__ = (UniqueConstraint("message_id", "user_id", name="uq_feedback_message_user"),)
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    message_id = Column(Uuid(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    rating = Column(String(8), nullable=False)    # "up" or "down"
+    reason = Column(String(32), nullable=True)    # only for "down": inaccurate / not_relevant / incomplete / other
+    comment = Column(Text, nullable=True)         # only for "down", optional free text
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_now)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_now)
+
+    message = relationship("Message", back_populates="feedback")

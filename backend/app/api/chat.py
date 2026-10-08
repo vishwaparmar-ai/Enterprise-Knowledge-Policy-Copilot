@@ -43,8 +43,10 @@ def chat(
         # Conversational messages ("thanks", "hi") skip retrieval entirely.
         reply = small_talk_reply(request.query)
         if reply is not None:
-            save_exchange(db, conversation, request.query, reply, [])
-            return ChatResponse(answer=reply, citations=[], conversation_id=str(conversation.id))
+            saved = save_exchange(db, conversation, request.query, reply, [])
+            return ChatResponse(
+                answer=reply, citations=[], conversation_id=str(conversation.id), message_id=str(saved.id)
+            )
 
         retriever = get_hybrid_retriever()
         levels = allowed_access_levels(current_user.role)
@@ -87,7 +89,7 @@ def chat(
             seen.add(key)
             citations.append(Citation(source=source, page=page))
 
-        save_exchange(
+        saved = save_exchange(
             db,
             conversation,
             request.query,
@@ -95,7 +97,12 @@ def chat(
             [{"source": c.source, "page": c.page} for c in citations],
         )
 
-        return ChatResponse(answer=response["answer"], citations=citations, conversation_id=str(conversation.id))
+        return ChatResponse(
+            answer=response["answer"],
+            citations=citations,
+            conversation_id=str(conversation.id),
+            message_id=str(saved.id),
+        )
 
     except Exception as exc:
         db.rollback()

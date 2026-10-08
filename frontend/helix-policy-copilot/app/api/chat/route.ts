@@ -54,5 +54,5 @@ export async function POST(req: Request) {
     page: c.page ?? null,
     snippet: c.snippet ?? "", // optional: add `snippet` to your Citation schema to enable click-to-expand excerpts
   }));
-  return NextResponse.json({ answer: data.answer ?? "", sources, conversation_id: data.conversation_id ?? null });
+  return NextResponse.json({ answer: data.answer ?? "", sources, conversation_id: data.conversation_id ?? null, message_id: data.message_id ?? null });
 }

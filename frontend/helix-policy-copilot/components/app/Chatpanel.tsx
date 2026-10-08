@@ -6,11 +6,11 @@ import { AppIcon } from "./Icons";
 import Markdown from "./Markdown";
 
 type Source = { document: string; page: number | null; snippet: string };
-type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: Source[]; retry?: string };
+type Rating = "up" | "down" | null;
+type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: Source[]; retry?: string; messageId?: string; feedback?: Rating };
 type Conv = { id: string; title: string; updatedAt: string };
 
 const SUGGESTIONS = [
-  "What is our remote work policy?",
   "How many days of annual leave do I get?",
   "Summarise the information security guidelines",
 ];
@@ -22,6 +22,8 @@ const Glyph = ({ children, className = "h-4 w-4" }: { children: ReactNode; class
 const PlusIcon = () => <Glyph><path d="M12 5v14M5 12h14" /></Glyph>;
 const EditIcon = () => <Glyph className="h-3.5 w-3.5"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z" /></Glyph>;
 const TrashIcon = () => <Glyph className="h-3.5 w-3.5"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4.5A.5.5 0 0 1 9.5 4h5a.5.5 0 0 1 .5.5V7" /></Glyph>;
+const ThumbUpIcon = () => <Glyph className="h-4 w-4"><path d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></Glyph>;
+const ThumbDownIcon = () => <Glyph className="h-4 w-4"><path d="M17 14V2M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></Glyph>;
 const ClockIcon = () => <Glyph><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Glyph>;
 
 /* ---------------- helpers ---------------- */
@@ -67,6 +69,112 @@ function SourceChips({ sources }: { sources: Source[] }) {
         <div className="mt-2 rounded-lg border border-line bg-canvas p-3 text-[13px] leading-relaxed text-slate-600">
           <p className="font-medium text-ink">{sources[open].document}{sources[open].page != null ? `, page ${sources[open].page}` : ""}</p>
           <p className="mt-1">{sources[open].snippet}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- feedback ---------------- */
+const REASONS = [
+  { id: "inaccurate", label: "Inaccurate" },
+  { id: "not_relevant", label: "Not relevant" },
+  { id: "incomplete", label: "Incomplete" },
+  { id: "other", label: "Other" },
+] as const;
+
+function FeedbackBar({ messageId, initial }: { messageId: string; initial: Rating }) {
+  const [rating, setRating] = useState<Rating>(initial);
+  const [panel, setPanel] = useState(false);
+  const [reason, setReason] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ text: string; error?: boolean } | null>(null);
+
+  async function call(method: "PUT" | "DELETE", body?: object) {
+    const res = await fetch(`/api/feedback/${messageId}`, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) { window.location.assign("/login"); throw new Error("auth"); }
+    if (!res.ok) throw new Error("failed");
+  }
+
+  async function choose(next: "up" | "down") {
+    if (busy) return;
+    const prev = rating;
+    setNote(null);
+    setBusy(true);
+    try {
+      if (rating === next) {
+        // Clicking the same thumb again removes the rating.
+        setRating(null);
+        setPanel(false);
+        await call("DELETE");
+      } else {
+        setRating(next);
+        setPanel(next === "down");
+        await call("PUT", { rating: next });
+        if (next === "up") setNote({ text: "Thanks for your feedback." });
+      }
+    } catch {
+      setRating(prev);
+      setPanel(false);
+      setNote({ text: "Couldn't save your feedback. Please try again.", error: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendDetails() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await call("PUT", { rating: "down", reason: reason ?? undefined, comment: comment.trim() || undefined });
+      setPanel(false);
+      setNote({ text: "Thanks. Your feedback helps us improve the answers." });
+    } catch {
+      setNote({ text: "Couldn't save your feedback. Please try again.", error: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const btn = "grid h-8 w-8 place-items-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+  return (
+    <div>
+      <div className="flex items-center gap-1">
+        <button onClick={() => choose("up")} disabled={busy} aria-pressed={rating === "up"} aria-label="This answer was helpful" title="Helpful"
+          className={`${btn} ${rating === "up" ? "bg-green-50 text-success" : "text-muted hover:bg-slate-100 hover:text-ink"}`}>
+          <ThumbUpIcon />
+        </button>
+        <button onClick={() => choose("down")} disabled={busy} aria-pressed={rating === "down"} aria-label="This answer was not helpful" title="Not helpful"
+          className={`${btn} ${rating === "down" ? "bg-red-50 text-danger" : "text-muted hover:bg-slate-100 hover:text-ink"}`}>
+          <ThumbDownIcon />
+        </button>
+        {note && <span role="status" className={`ml-2 text-[12.5px] ${note.error ? "text-danger" : "text-muted"}`}>{note.text}</span>}
+      </div>
+
+      {panel && (
+        <div role="group" aria-label="Tell us what went wrong" className="mt-2 rounded-lg border border-line bg-canvas p-3">
+          <p className="text-[13px] font-medium">What went wrong? <span className="font-normal text-muted">(optional)</span></p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {REASONS.map((r) => (
+              <button key={r.id} onClick={() => setReason(reason === r.id ? null : r.id)} aria-pressed={reason === r.id}
+                className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${reason === r.id ? "border-brand bg-blue-50 text-brand" : "border-line bg-white text-slate-700 hover:border-slate-300"}`}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <label htmlFor={`fb-${messageId}`} className="sr-only">Additional comments</label>
+          <textarea id={`fb-${messageId}`} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} rows={2}
+            placeholder="Anything else we should know?"
+            className="mt-2 w-full resize-none rounded-lg border border-line bg-white px-3 py-2 text-[13.5px] placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15" />
+          <div className="mt-2 flex justify-end gap-2">
+            <button onClick={() => setPanel(false)} className="h-8 rounded-lg px-3 text-[13px] font-medium text-slate-600 hover:bg-slate-100">Skip</button>
+            <button onClick={sendDetails} disabled={busy || (!reason && !comment.trim())} className="h-8 rounded-lg bg-brand px-3 text-[13px] font-medium text-white hover:bg-[#1d4fd8] disabled:cursor-not-allowed disabled:bg-brand/40">Send feedback</button>
+          </div>
         </div>
       )}
     </div>
@@ -231,7 +339,7 @@ export default function ChatPanel() {
       if (seq !== loadSeq.current) return;
       setMessages(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        d.messages.map((m: any): Msg => ({ id: nid(), role: m.role, text: m.text, sources: m.sources }))
+        d.messages.map((m: any): Msg => ({ id: nid(), role: m.role, text: m.text, sources: m.sources, messageId: m.role === "assistant" ? m.id : undefined, feedback: m.feedback ?? null }))
       );
     } catch {
       if (seq === loadSeq.current) setThreadError(true);
@@ -307,7 +415,7 @@ export default function ChatPanel() {
       if (activeRef.current === sentFrom) {
         // Still on the same thread: show the answer, and adopt the new conversation id if this was a new chat.
         if (!sentFrom && data.conversation_id) setActive(data.conversation_id);
-        setMessages((m) => [...m, { id: nid(), role: "assistant", text: data.answer, sources: data.sources }]);
+        setMessages((m) => [...m, { id: nid(), role: "assistant", text: data.answer, sources: data.sources, messageId: data.message_id ?? undefined, feedback: null }]);
       }
       loadConvs(); // refresh titles and ordering
     } catch (err) {
@@ -334,7 +442,7 @@ export default function ChatPanel() {
         onNew={newChat}
         onRename={renameConv}
         onDelete={deleteConv}
-        className={`${showList ? "flex" : "hidden"} w-full lg:flex lg:w-64 lg:shrink-0 lg:border-r`}
+        className={`${showList ? "flex" : "hidden"} w-full lg:order-last lg:flex lg:w-64 lg:shrink-0 lg:border-l`}
       />
 
       <div className={`${showList ? "hidden" : "flex"} min-w-0 flex-1 flex-col lg:flex`}>
@@ -383,6 +491,11 @@ export default function ChatPanel() {
                         {m.sources && <SourceChips sources={m.sources} />}
                         {m.retry && (
                           <button onClick={() => send(m.retry!)} className="mt-2 text-[13px] font-medium text-brand hover:underline">Try again</button>
+                        )}
+                        {m.messageId && !m.retry && (
+                          <div className="mt-3 border-t border-line pt-2">
+                            <FeedbackBar messageId={m.messageId} initial={m.feedback ?? null} />
+                          </div>
                         )}
                       </div>
                     </li>

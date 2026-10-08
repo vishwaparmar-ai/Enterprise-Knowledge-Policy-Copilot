@@ -61,21 +61,23 @@ def recent_history(db: Session, conversation_id: uuid.UUID, turns: int = HISTORY
 
 def save_exchange(
     db: Session, conversation: Conversation, user_text: str, answer: str, citations: list[dict]
-) -> None:
+) -> Message:
+    """Saves the question and answer. Returns the assistant message (its id is what feedback attaches to)."""
     now = datetime.now(timezone.utc)
     # Explicit, ordered timestamps: a database's now() is constant inside one transaction.
     db.add(Message(conversation_id=conversation.id, role="user", content=user_text, created_at=now))
-    db.add(
-        Message(
-            conversation_id=conversation.id,
-            role="assistant",
-            content=answer,
-            citations=citations,
-            created_at=now + timedelta(milliseconds=1),
-        )
+    assistant = Message(
+        id=uuid.uuid4(),
+        conversation_id=conversation.id,
+        role="assistant",
+        content=answer,
+        citations=citations,
+        created_at=now + timedelta(milliseconds=1),
     )
+    db.add(assistant)
     conversation.updated_at = now
     db.commit()
+    return assistant
 
 
 # --------------------------------------------------------------------------- #

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.security import get_current_user
 from backend.app.db.session import get_db
-from backend.app.models.chat import Conversation
+from backend.app.models.chat import Conversation, Feedback
 from backend.app.models.user import User
 from backend.app.services.chat_history import get_owned_conversation
 
@@ -44,6 +44,13 @@ def get_conversation(
     current_user: User = Depends(get_current_user),
 ):
     c = get_owned_conversation(db, current_user, conversation_id)
+    assistant_ids = [m.id for m in c.messages if m.role == "assistant"]
+    ratings = {}
+    if assistant_ids:
+        ratings = {
+            f.message_id: f.rating
+            for f in db.query(Feedback).filter(Feedback.user_id == current_user.id, Feedback.message_id.in_(assistant_ids))
+        }
     return {
         **_summary(c),
         "messages": [
@@ -52,6 +59,7 @@ def get_conversation(
                 "role": m.role,
                 "content": m.content,
                 "citations": m.citations or [],
+                "feedback": ratings.get(m.id),  # "up", "down" or null: this user's own rating
                 "created_at": m.created_at.isoformat(),
             }
             for m in c.messages

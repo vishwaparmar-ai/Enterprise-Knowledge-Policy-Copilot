@@ -29,6 +29,7 @@ export async function GET(_req: Request, { params }: Ctx) {
       id: String(m.id),
       role: m.role,
       text: m.content,
+      feedback: m.feedback ?? null, // this user's own rating of the answer: "up", "down" or null
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sources: (m.citations ?? []).map((c: any) => ({ document: c.source ?? "Document", page: c.page ?? null, snippet: "" })),
     }));
