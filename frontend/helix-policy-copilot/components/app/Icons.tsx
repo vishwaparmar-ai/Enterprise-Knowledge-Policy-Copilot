@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type AppIconName = "home" | "chat" | "doc" | "settings" | "logout" | "menu" | "close" | "send" | "upload" | "arrow";
+export type AppIconName = "home" | "chat" | "doc" | "settings" | "logout" | "menu" | "close" | "send" | "upload" | "arrow" | "chart";
 
 const paths: Record<AppIconName, ReactNode> = {
   home: <><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9.5h13V10" /></>,
@@ -13,6 +13,7 @@ const paths: Record<AppIconName, ReactNode> = {
   send: <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />,
   upload: <path d="M12 16V4M6.5 9.5 12 4l5.5 5.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />,
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  chart: <path d="M4 20h16M7 17v-5M12 17V6M17 17v-9" />,
 };
 
 export function AppIcon({ name, className = "h-[18px] w-[18px]" }: { name: AppIconName; className?: string }) {

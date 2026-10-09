@@ -7,10 +7,12 @@ import Markdown from "./Markdown";
 
 type Source = { document: string; page: number | null; snippet: string };
 type Rating = "up" | "down" | null;
-type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: Source[]; retry?: string; messageId?: string; feedback?: Rating };
+type Msg = { id: number; role: "user" | "assistant"; text: string; sources?: Source[]; retry?: string; messageId?: string; feedback?: Rating;
+  streaming?: boolean; stage?: "searching" | "generating"; stopped?: boolean };
 type Conv = { id: string; title: string; updatedAt: string };
 
 const SUGGESTIONS = [
+  "What is our remote work policy?",
   "How many days of annual leave do I get?",
   "Summarise the information security guidelines",
 ];
@@ -292,6 +294,7 @@ export default function ChatPanel() {
   const loadSeq = useRef(0);
   const idRef = useRef(0);
   const started = useRef(false);
+  const abortRef = useRef<AbortController | null>(null); // the answer currently streaming, if any
   const endRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const nid = () => ++idRef.current;
@@ -314,6 +317,7 @@ export default function ChatPanel() {
   }, [router]);
 
   const newChat = useCallback(() => {
+    abortRef.current?.abort();
     loadSeq.current++;
     setActive(null);
     setMessages([]);
@@ -323,6 +327,7 @@ export default function ChatPanel() {
   }, [setActive]);
 
   const openConversation = useCallback(async (id: string) => {
+    abortRef.current?.abort();
     const seq = ++loadSeq.current;
     setActive(id);
     setShowList(false);
@@ -372,7 +377,7 @@ export default function ChatPanel() {
   }
 
   useEffect(() => { loadConvs(); }, [loadConvs]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, loading]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: loading ? "auto" : "smooth", block: "end" }); }, [messages, loading]);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -385,15 +390,30 @@ export default function ChatPanel() {
     const question = raw.trim();
     if (!question || loading) return;
     const sentFrom = activeRef.current;
+    const assistantId = nid();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setInput("");
     if (taRef.current) taRef.current.style.height = "auto";
-    setMessages((m) => [...m, { id: nid(), role: "user", text: question }]);
+    setMessages((m) => [
+      ...m,
+      { id: nid(), role: "user", text: question },
+      { id: assistantId, role: "assistant", text: "", streaming: true, stage: "searching" },
+    ]);
     setLoading(true);
+
+    const update = (patch: Partial<Msg>) => setMessages((m) => m.map((x) => (x.id === assistantId ? { ...x, ...patch } : x)));
+    let text = "";
+    let frame = 0;
+    const flush = () => { frame = 0; update({ text, stage: "generating" }); };
+
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, conversation_id: sentFrom }),
+        signal: controller.signal,
       });
       if (res.status === 401) {
         // In development, show the backend's reason first (the route has already cleared the stale cookies).
@@ -407,22 +427,62 @@ export default function ChatPanel() {
         newChat();
         throw new Error("This conversation is no longer available. Please ask again to start a new chat");
       }
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.detail || "failed");
       }
-      const data = await res.json();
-      if (activeRef.current === sentFrom) {
-        // Still on the same thread: show the answer, and adopt the new conversation id if this was a new chat.
-        if (!sentFrom && data.conversation_id) setActive(data.conversation_id);
-        setMessages((m) => [...m, { id: nid(), role: "assistant", text: data.answer, sources: data.sources, messageId: data.message_id ?? undefined, feedback: null }]);
+
+      // Read the stream: one JSON event per line.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finished = false;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const ev = JSON.parse(line);
+          if (ev.type === "status") {
+            update({ stage: ev.stage });
+          } else if (ev.type === "delta") {
+            text += ev.text;
+            if (!frame) frame = requestAnimationFrame(flush); // at most one re-render per frame
+          } else if (ev.type === "done") {
+            finished = true;
+            if (frame) cancelAnimationFrame(frame);
+            if (!sentFrom && ev.conversation_id && activeRef.current === sentFrom) setActive(ev.conversation_id);
+            update({
+              text: ev.answer ?? text,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              sources: (ev.citations ?? []).map((c: any) => ({ document: c.source ?? "Document", page: c.page ?? null, snippet: "" })),
+              messageId: ev.message_id ?? undefined,
+              feedback: null,
+              streaming: false,
+              stage: undefined,
+            });
+          } else if (ev.type === "error") {
+            throw new Error(ev.message || "failed");
+          }
+        }
       }
+      if (!finished) throw new Error("The connection was interrupted");
       loadConvs(); // refresh titles and ordering
     } catch (err) {
-      // In development the real reason is shown to help debugging; production shows the generic message.
-      const reason = process.env.NODE_ENV !== "production" && err instanceof Error && err.message !== "failed" ? ` (${err.message})` : "";
-      setMessages((m) => [...m, { id: nid(), role: "assistant", text: `I couldn't get an answer just now. Please try again.${reason}`, retry: question }]);
+      if (frame) cancelAnimationFrame(frame);
+      if (controller.signal.aborted) {
+        // The user pressed Stop (or switched chats). The partial answer is not saved on the server.
+        update({ text, streaming: false, stage: undefined, stopped: true });
+      } else {
+        // In development the real reason is shown to help debugging; production shows the generic message.
+        const reason = process.env.NODE_ENV !== "production" && err instanceof Error && err.message !== "failed" ? ` (${err.message})` : "";
+        update({ text: `I couldn't get an answer just now. Please try again.${reason}`, streaming: false, stage: undefined, retry: question });
+      }
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   }
@@ -457,7 +517,7 @@ export default function ChatPanel() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-live="polite">
+          <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6" aria-live={loading ? "off" : "polite"}>
             {threadLoading ? (
               <p className="pt-[15vh] text-center text-[14px] text-muted">Loading conversation...</p>
             ) : threadError ? (
@@ -487,12 +547,24 @@ export default function ChatPanel() {
                     <li key={m.id} className="flex gap-3">
                       <span className="mt-0.5 shrink-0"><LogoMark size={28} /></span>
                       <div className="min-w-0 max-w-[88%] rounded-2xl rounded-tl-md border border-line bg-white px-4 py-3 shadow-btn">
-                        <Markdown text={m.text} />
+                        {m.streaming && !m.text ? (
+                          <p role="status" className="flex items-center gap-2.5 py-0.5 text-[14px] text-muted">
+                            <span className="flex gap-1" aria-hidden="true">
+                              {[0, 1, 2].map((i) => (
+                                <span key={i} className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 160}ms` }} />
+                              ))}
+                            </span>
+                            {m.stage === "generating" ? "Writing the answer..." : "Searching policies..."}
+                          </p>
+                        ) : (
+                          <Markdown text={m.text} />
+                        )}
+                        {m.stopped && <p className="mt-2 text-[12.5px] italic text-muted">{m.text ? "Response stopped." : "Stopped before an answer was ready."}</p>}
                         {m.sources && <SourceChips sources={m.sources} />}
                         {m.retry && (
                           <button onClick={() => send(m.retry!)} className="mt-2 text-[13px] font-medium text-brand hover:underline">Try again</button>
                         )}
-                        {m.messageId && !m.retry && (
+                        {m.messageId && !m.retry && !m.streaming && (
                           <div className="mt-3 border-t border-line pt-2">
                             <FeedbackBar messageId={m.messageId} initial={m.feedback ?? null} />
                           </div>
@@ -500,16 +572,6 @@ export default function ChatPanel() {
                       </div>
                     </li>
                   )
-                )}
-                {loading && (
-                  <li className="flex items-center gap-3" aria-label="Copilot is typing">
-                    <span className="shrink-0"><LogoMark size={28} /></span>
-                    <span className="flex gap-1 rounded-2xl border border-line bg-white px-4 py-3.5 shadow-btn">
-                      {[0, 1, 2].map((i) => (
-                        <span key={i} className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400 motion-reduce:animate-none" style={{ animationDelay: `${i * 160}ms` }} />
-                      ))}
-                    </span>
-                  </li>
                 )}
               </ul>
             )}
@@ -534,9 +596,15 @@ export default function ChatPanel() {
               placeholder="Ask about a policy, guideline, or standard..."
               className="max-h-40 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] placeholder:text-slate-400 focus:outline-none focus-visible:ring-0"
             />
-            <button type="submit" disabled={!input.trim() || loading} aria-label="Send message" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand text-white hover:bg-[#1d4fd8] disabled:cursor-not-allowed disabled:bg-brand/40">
-              <AppIcon name="send" />
-            </button>
+            {loading ? (
+              <button type="button" onClick={() => abortRef.current?.abort()} aria-label="Stop generating" title="Stop generating" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-navy text-white hover:bg-slate-800">
+                <span className="h-3 w-3 rounded-[3px] bg-white" aria-hidden="true" />
+              </button>
+            ) : (
+              <button type="submit" disabled={!input.trim()} aria-label="Send message" className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand text-white hover:bg-[#1d4fd8] disabled:cursor-not-allowed disabled:bg-brand/40">
+                <AppIcon name="send" />
+              </button>
+            )}
           </form>
           <p className="mx-auto mt-2 max-w-3xl text-center text-[12px] text-muted">Copilot can make mistakes. Check the cited sources for important decisions.</p>
         </div>

@@ -8,6 +8,7 @@ from backend.app.api.chat import router as chat_router
 from backend.app.api.auth import router as login_router
 from backend.app.api.conversations import router as conversation_router
 from backend.app.api.feedback import router as feedback_router
+from backend.app.api.analytics import router as analytics_router
 from fastapi.middleware.cors import CORSMiddleware
 
 setup_logging()
@@ -34,6 +35,7 @@ app.include_router(chat_router)
 app.include_router(login_router)
 app.include_router(conversation_router)
 app.include_router(feedback_router)
+app.include_router(analytics_router)
 
 @app.get("/health")
 async def health_check():

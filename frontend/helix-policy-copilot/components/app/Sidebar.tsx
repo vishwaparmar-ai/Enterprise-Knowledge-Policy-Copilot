@@ -9,6 +9,7 @@ const NAV: { href: string; label: string; icon: AppIconName; adminOnly?: boolean
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/chat", label: "Chat", icon: "chat" },
   { href: "/documents", label: "Documents", icon: "doc", adminOnly: true },
+  { href: "/analytics", label: "Analytics", icon: "chart", adminOnly: true },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
